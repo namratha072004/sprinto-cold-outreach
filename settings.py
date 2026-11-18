@@ -3,7 +3,8 @@ Scoring rules and thresholds stay in rubric.py. Secrets are read from .env and n
 import os, json, threading, datetime as dt
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.environ.get("SPRINTO_OUT") or os.path.join(BASE, "output")   # override only for tests/screenshots
+HOSTED = bool(os.environ.get("VERCEL"))      # True on Vercel: read-only viewer of the bundled demo_results/
+OUT = os.environ.get("SPRINTO_OUT") or os.path.join(BASE, "demo_results" if HOSTED else "output")   # SPRINTO_OUT only for tests/screenshots
 CACHE = os.path.join(OUT, "cache")
 
 _ENV = {}

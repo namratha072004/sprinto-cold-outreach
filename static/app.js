@@ -21,6 +21,12 @@ async function api(path, body) {
 async function refreshStatus() {
   const { data } = await api("/api/status");
   if (!data) return;
+  if (data.hosted) {
+    $("#pill-hunter").hidden = true;
+    const m = $("#pill-mail"); m.textContent = "Read-only copy: saved results from a real local run"; m.className = "pill";
+    $(".add").innerHTML = `<div class="muted small"><b>Hosted, read-only.</b> These are real saved results (prospect emails masked). Running new companies, editing, approving and sending only work in the local app: <code>./start.sh</code>.</div>`;
+    return;
+  }
   const h = $("#pill-hunter");
   h.textContent = data.hunter_remaining == null ? "Hunter credits: unknown" : `Hunter credits left: ${data.hunter_remaining}`;
   h.className = "pill" + (data.hunter_remaining != null && data.hunter_remaining < 5 ? " warning" : "");
@@ -90,7 +96,7 @@ function render(st) {
     const fb = rv.contact_correct;
     h += `<div class="card"><h3>Why this person</h3><div class="who"><div>${esc(c.why)}
       <div class="muted small">Contact email found by Hunter (research only, never emailed): ${esc(c.email)}${c.email_verified ? " · Hunter marks it valid" : ""}</div></div>
-      <div class="small">Right person? <button class="btn small" data-fb="1" ${fb === true ? "disabled" : ""}>Yes</button> <button class="btn small" data-fb="0" ${fb === false ? "disabled" : ""}>No</button></div></div></div>`;
+      <div class="small" ${CFG.hosted ? "hidden" : ""}>Right person? <button class="btn small" data-fb="1" ${fb === true ? "disabled" : ""}>Yes</button> <button class="btn small" data-fb="0" ${fb === false ? "disabled" : ""}>No</button></div></div></div>`;
   }
 
   if (a) h += trail(st);
@@ -154,6 +160,9 @@ function trail(st) {
 // ------------------------------------------------------------------ draft, decision
 function draftPanel(st) {
   const d = st.draft, m = CFG.mail || {};
+  if (CFG.hosted) return `<div class="card draft" id="draft"><h3>Draft email (awaiting review)</h3>
+    <label>Subject</label><input type="text" value="${esc(d.subject)}" readonly><label>Email</label><textarea readonly>${esc(d.body)}</textarea>
+    <div class="muted small" style="margin-top:8px">Read-only hosted copy: Approve, Edit and Reject are disabled. Nothing was sent. Use the local app to review and send.</div></div>`;
   return `<div class="card draft" id="draft"><h3>Draft email</h3>
     <label for="subj">Subject</label><input type="text" id="subj" value="${esc(d.subject)}" readonly>
     <label for="body">Email</label><textarea id="body" readonly>${esc(d.body)}</textarea>

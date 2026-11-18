@@ -17,6 +17,10 @@ _HUNTER_CACHE = {"at": 0, "remaining": None}
 # ---------------------------------------------------------------- safety for a local app
 @app.before_request
 def guard():
+    if S.HOSTED:                                         # hosted copy is read-only: nothing can run, change or send
+        if request.method == "POST":
+            return jsonify({"error": "This hosted copy is read-only. Run, edit, approve and send work in the local app (./start.sh)."}), 403
+        return None
     host = (request.host or "").split(":")[0]
     if host not in ("127.0.0.1", "localhost"):          # blocks DNS-rebinding style access
         abort(403)
@@ -42,7 +46,8 @@ def worker():
             print("batch error:", type(e).__name__)
         RUN.update(active=JOBS.qsize() > 0, current=None)
 
-threading.Thread(target=worker, daemon=True).start()
+if not S.HOSTED:
+    threading.Thread(target=worker, daemon=True).start()
 
 def recover_interrupted():
     """If the app was closed mid-run, say so in plain words instead of showing 'working' forever."""
@@ -51,7 +56,8 @@ def recover_interrupted():
             st.update(status="ERROR", stage="done", reason="The run was interrupted (app closed). Run this company again.",
                       escalation="The run was interrupted (app closed). Run this company again.")
             S.write_state(st)
-recover_interrupted()
+if not S.HOSTED:
+    recover_interrupted()
 
 # ---------------------------------------------------------------- pages and data
 @app.get("/")
@@ -76,7 +82,8 @@ def company(domain):
     st = S.read_state(valid_domain(domain))
     if not st:
         abort(404)
-    review.mark_opened(domain)
+    if not S.HOSTED:
+        review.mark_opened(domain)
     st = S.read_state(domain)
     st["view"] = review.view_status(st)
     st["finish_text"] = P.finish_text(st)
@@ -85,14 +92,14 @@ def company(domain):
 @app.get("/api/config")
 def config():
     return jsonify({"weights": R.WEIGHTS, "threshold": R.THRESHOLD_TOTAL, "contact_pass": R.CONTACT_PASS_TOTAL,
-                    "words": [80, 120], "mail": mailer.send_status(), "targets": metrics.compute()["targets"]})
+                    "words": [80, 120], "mail": ({"ready": False} if S.HOSTED else mailer.send_status()), "hosted": S.HOSTED, "targets": metrics.compute()["targets"]})
 
 @app.get("/api/status")
 def status():
-    if time.time() - _HUNTER_CACHE["at"] > 60 and S.env("HUNTER_API_KEY"):        # free account call, cached for a minute
+    if not S.HOSTED and time.time() - _HUNTER_CACHE["at"] > 60 and S.env("HUNTER_API_KEY"):        # free account call, cached for a minute
         _HUNTER_CACHE.update(at=time.time(), remaining=P.hunter_remaining())
-    return jsonify({"run": RUN, "hunter_remaining": _HUNTER_CACHE["remaining"], "mail": mailer.send_status(),
-                    "gemini_key_set": bool(S.env("GEMINI_API_KEY"))})
+    return jsonify({"run": RUN, "hunter_remaining": _HUNTER_CACHE["remaining"], "mail": ({"ready": False} if S.HOSTED else mailer.send_status()),
+                    "gemini_key_set": bool(S.env("GEMINI_API_KEY")), "hosted": S.HOSTED})
 
 @app.get("/api/metrics")
 def get_metrics():

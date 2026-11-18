@@ -1,0 +1,886 @@
+{
+ "domain": "linear.app",
+ "run_date": "2026-11-18",
+ "status": "DRAFT_READY",
+ "stage": "done",
+ "timing": {
+  "started_at": "2026-11-18T23:58:52",
+  "finished_at": "2026-11-19T00:00:20",
+  "seconds": 87.1
+ },
+ "pages": [
+  {
+   "url": "https://linear.app",
+   "type": "homepage",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  },
+  {
+   "url": "https://linear.app/security",
+   "type": "security",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  },
+  {
+   "url": "https://linear.app/customers",
+   "type": "customers",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  },
+  {
+   "url": "https://linear.app/docs",
+   "type": "product",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  }
+ ],
+ "rounds": [
+  {
+   "round": 0,
+   "gap": null,
+   "source": [
+    "https://linear.app/security",
+    "https://linear.app/customers",
+    "https://linear.app/docs",
+    "homepage",
+    "Google News headlines"
+   ],
+   "new_evidence": [
+    {
+     "dimension": "business_fit",
+     "source_url": "https://linear.app/",
+     "excerpt": "Linear \u2013 The system for product development | Purpose-built for planning and building products with AI agents.",
+     "dated": null
+    },
+    {
+     "dimension": "business_fit",
+     "source_url": "https://linear.app/security",
+     "excerpt": "Choose to store your data in the European Union or the United States when creating a Linear workspace.",
+     "dated": null
+    },
+    {
+     "dimension": "customer_trust",
+     "source_url": "https://linear.app/customers",
+     "excerpt": "Salesforce SaaS, Enterprise Visit site \u2197 Scale How Scale compressed bug resolution time by 52% AI, Enterprise Read story \u2192 Mercury Mercury eliminated cluttered feedback with Linear Asks Fintech, Ente",
+     "dated": null
+    },
+    {
+     "dimension": "customer_trust",
+     "source_url": "https://linear.app/customers",
+     "excerpt": "Coinbase\u2019s bet on agent-first development Watch video \u2192 How teams at Oscar left one of the world\u2019s most complex Jira instances Read story \u2192 Boom Supersonic builds as fast as it flies",
+     "dated": null
+    },
+    {
+     "dimension": "compliance_workload",
+     "source_url": "https://linear.app/security",
+     "excerpt": "Linear undergoes regular Service Organization Controls audits (SOC 2 Type II). Request SOC 2 \u2192 GDPR compliance Committed to compliance with Europe\u2019s General Data Protection Regulation (GDPR).",
+     "dated": null
+    },
+    {
+     "dimension": "compliance_workload",
+     "source_url": "https://linear.app/security",
+     "excerpt": "HIPAA compliance Privacy and security measures to ensure that Protected Health Information (PHI) is appropriately safeguarded. Request BAA \u2192 ISO 27001 certified Linear has achieved ISO/IEC 27001:2022",
+     "dated": null
+    },
+    {
+     "dimension": "reason_now",
+     "source_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPdDNKSldOd0dQNktPeHFYdzBNLWZlRkxHTllaLTYxekFFbThiZnROUFE2Y1JpQU04cFhLMjE4bjhNVEpPQk1XNGdCZXJEQlhMWk9WVlFrTjRueEE1TFJCMWQ2M0c4TUpEUzV6dWVzWWliLU9UQVlBMmt2bWU5aW0ydXJUS2VJTGtHNDE1cmNmRGpqUEliNXlfZVU5ZjZpd1V4RXVlTXJLQ25qQm15X3c?oc=5",
+     "excerpt": "Atlassian competitor Linear raises funding at $1.25-billion valuation - Reuters",
+     "dated": "2025-06-10"
+    },
+    {
+     "dimension": "delivery_complexity",
+     "source_url": "https://linear.app/security",
+     "excerpt": "Multi-region hosting Choose to store your data in the European Union or the United States when creating a Linear workspace.",
+     "dated": null
+    },
+    {
+     "dimension": "delivery_complexity",
+     "source_url": "https://linear.app/docs",
+     "excerpt": "Linear Agent Work across Linear, from first idea to finished project MCP Connect to your AI tools and workflows Explore Linear Linear Code Turn ideas and issues into code with agents",
+     "dated": null
+    }
+   ],
+   "revised_decision": "QUALIFIED"
+  }
+ ],
+ "reason": "Draft ready for your review.",
+ "flags": [
+  "funding_stage_unknown"
+ ],
+ "assessment": {
+  "company_name": "Linear",
+  "business_model": "saas",
+  "is_direct_compliance_platform_competitor": false,
+  "is_unrelated_business": false,
+  "disqualifier_evidence": null,
+  "funding": {
+   "stage": "unknown",
+   "date": null,
+   "evidence": null
+  },
+  "employee_count": {
+   "value": null,
+   "evidence": {
+    "source_url": "https://linear.app/customers",
+    "excerpt": "Remote switched their 1,000 person team to Linear to move faster"
+   }
+  },
+  "dimensions": {
+   "business_fit": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Linear provides a cloud-based software system for product development, planning, and issue tracking that stores and processes customer data (such as roadmaps, PRDs, and code diffs).",
+    "evidence": [
+     {
+      "source_url": "https://linear.app/",
+      "excerpt": "Linear \u2013 The system for product development | Purpose-built for planning and building products with AI agents.",
+      "dated": null
+     },
+     {
+      "source_url": "https://linear.app/security",
+      "excerpt": "Choose to store your data in the European Union or the United States when creating a Linear workspace.",
+      "dated": null
+     }
+    ]
+   },
+   "customer_trust": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Linear serves named enterprise customers and companies in regulated or high-assurance industries such as Ramp, Coinbase, Oscar, Salesforce, and Mercury.",
+    "evidence": [
+     {
+      "source_url": "https://linear.app/customers",
+      "excerpt": "Salesforce SaaS, Enterprise Visit site \u2197 Scale How Scale compressed bug resolution time by 52% AI, Enterprise Read story \u2192 Mercury Mercury eliminated cluttered feedback with Linear Asks Fintech, Ente",
+      "dated": null
+     },
+     {
+      "source_url": "https://linear.app/customers",
+      "excerpt": "Coinbase\u2019s bet on agent-first development Watch video \u2192 How teams at Oscar left one of the world\u2019s most complex Jira instances Read story \u2192 Boom Supersonic builds as fast as it flies",
+      "dated": null
+     }
+    ]
+   },
+   "compliance_workload": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Linear demonstrates active compliance workload across multiple certifications and frameworks including SOC 2 Type II, ISO/IEC 27001:2022, GDPR, and HIPAA (BAA).",
+    "evidence": [
+     {
+      "source_url": "https://linear.app/security",
+      "excerpt": "Linear undergoes regular Service Organization Controls audits (SOC 2 Type II). Request SOC 2 \u2192 GDPR compliance Committed to compliance with Europe\u2019s General Data Protection Regulation (GDPR).",
+      "dated": null
+     },
+     {
+      "source_url": "https://linear.app/security",
+      "excerpt": "HIPAA compliance Privacy and security measures to ensure that Protected Health Information (PHI) is appropriately safeguarded. Request BAA \u2192 ISO 27001 certified Linear has achieved ISO/IEC 27001:2022",
+      "dated": null
+     }
+    ]
+   },
+   "reason_now": {
+    "level": 0,
+    "state": "missing",
+    "reasoning": "There is no evidence of an active compliance deadline, new audit initiative, or enterprise launch within 6-12 months of 2026-11-18. The funding news was in June 2025, which is outside the 12-month window.",
+    "evidence": [
+     {
+      "source_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPdDNKSldOd0dQNktPeHFYdzBNLWZlRkxHTllaLTYxekFFbThiZnROUFE2Y1JpQU04cFhLMjE4bjhNVEpPQk1XNGdCZXJEQlhMWk9WVlFrTjRueEE1TFJCMWQ2M0c4TUpEUzV6dWVzWWliLU9UQVlBMmt2bWU5aW0ydXJUS2VJTGtHNDE1cmNmRGpqUEliNXlfZVU5ZjZpd1V4RXVlTXJLQ25qQm15X3c?oc=5",
+      "excerpt": "Atlassian competitor Linear raises funding at $1.25-billion valuation - Reuters",
+      "dated": "2025-06-10"
+     }
+    ]
+   },
+   "delivery_complexity": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Linear handles multiple compliance frameworks (SOC 2, ISO 27001, HIPAA, GDPR), offers multi-region hosting (EU and US), and supports numerous integrations (Slack, GitHub, MCP, AI coding agents).",
+    "evidence": [
+     {
+      "source_url": "https://linear.app/security",
+      "excerpt": "Multi-region hosting Choose to store your data in the European Union or the United States when creating a Linear workspace.",
+      "dated": null
+     },
+     {
+      "source_url": "https://linear.app/docs",
+      "excerpt": "Linear Agent Work across Linear, from first idea to finished project MCP Connect to your AI tools and workflows Explore Linear Linear Code Turn ideas and issues into code with agents",
+      "dated": null
+     }
+    ]
+   }
+  },
+  "compliance_claims_exact": [
+   "SOC 2 Type II",
+   "GDPR",
+   "HIPAA",
+   "ISO/IEC 27001:2022"
+  ],
+  "named_customers": [
+   "Ramp",
+   "OpenAI",
+   "Coinbase",
+   "Oscar",
+   "Boom Supersonic",
+   "Cursor",
+   "Automattic",
+   "Scout24",
+   "Brex",
+   "Opendoor",
+   "Cars24",
+   "Dandelion Chocolate",
+   "Salesforce",
+   "Scale",
+   "Mercury",
+   "Klaviyo",
+   "Figma",
+   "Cash App",
+   "Vercel",
+   "Sierra",
+   "Yahoo",
+   "Clay",
+   "Perplexity",
+   "Clickhouse",
+   "Lovable",
+   "Substack",
+   "Monzo",
+   "Remote",
+   "Polymarket"
+  ],
+  "hiring_signals": [],
+  "missing": [
+   {
+    "gap": "Linear's internal employee count",
+    "page_type": "about"
+   },
+   {
+    "gap": "Specific funding stage (e.g. Series B, Series C)",
+    "page_type": "news"
+   },
+   {
+    "gap": "Active compliance hiring, upcoming audit deadlines, or expansion triggers within the last 6-12 months",
+    "page_type": "careers"
+   }
+  ],
+  "verification_notes": []
+ },
+ "gates": {
+  "saas": {
+   "state": "passed",
+   "detail": "business fit level 2 (needs 2)"
+  },
+  "series": {
+   "state": "unknown",
+   "detail": "no dated source names the funding round (flagged, company continues)"
+  },
+  "compliance": {
+   "state": "passed",
+   "detail": "compliance workload level 2 (needs 1)"
+  },
+  "score": {
+   "state": "passed",
+   "detail": "80/100 (needs 65)"
+  }
+ },
+ "points": {
+  "business_fit": 25.0,
+  "customer_trust": 20.0,
+  "compliance_workload": 25.0,
+  "reason_now": 0.0,
+  "delivery_complexity": 10.0
+ },
+ "total": 80.0,
+ "sources_used": [
+  "https://linear.app/",
+  "https://news.google.com/rss/articles/CBMiiwFBVV95cUxNVGR4ZjUwTlJYQlF6VVBPczU0TFdxcGNfUU96cWg2RmtQeVJQYTVWU1hRaEF5X25XejBVSmFlMVN5SW5GeEFYbkhGSk9uNmp3M05HU0NBUzZmMVBsaDRQWUYyY1k4WkZqMmdVSTlkdE1jWThBUHZ2S1ZuOS1oNDlfSzNEZW93S0FPRlQ4?oc=5",
+  "https://news.google.com/rss/articles/CBMiekFVX3lxTE9sZGRZRUpTQU5HeUh5dVRUaUFJWFZzSDRxTVNJZkgyXzF1YjJzRE9JNFdOc1dndFFXQXlfWmtXZlJmQjROWWZuNkhsa054a1dWTmg4a21JWXk1NzNjdHVpMDVYeWR1dTE1NEtWV0ZLdTNfdU95Q1dKZjh3?oc=5",
+  "https://news.google.com/rss/articles/CBMihgJBVV95cUxQbmhzczg3aG9uUTFmU3dqYldkOC0xNmk1TkZpVzVVc0EtTGV1UkZfbTVRWVRTNE8zTFdNMW5PSGxkcVBmM0JYOGFtd1ZmNXY5NkRsQ1JBR1A3UkN5MHUyY1E5dHBOczcwZEtHRFVtOVJiOEwxMWJjNXhTbDFsVXhRYU02S1pkY2U5MFoyZVpUNGJOaUlHaHVLa1Z3ancxcUVXSkVVS054dUxOeTlsa2xzck5fd1ZNNEFHMXoycnRmRGgzVE9rNV9tNHBlN2xjLWxsVnpjMjhHeGlaMWlRb3RIU2l0NVJFYmVTMEl3U2Q1V0xBZmdETkpCRGl3ZkZSVUdrcjdKQWZR?oc=5",
+  "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQZjlfQTdHeHRRWTlfRWNKX3czX0djYUlodkg1elJHNEVhem5xbFJCMGVrU0dXSmNlV3pkc090dVFVRWowQURoWGs3bVgzYjVmOU95cmZabTNsNkt5LXFCeEg2dF80THppdnZobUVERVVyMWFLVlZqVUZ2bk9PS2Q3RlRMSkk1UlFDWGdfOU5PWFJMd1JDOHlFQkhGcjNwUWlwNEEwcVZvZWg?oc=5",
+  "https://news.google.com/rss/articles/CBMiYkFVX3lxTE1IZk52ZzZ5QVNNeG5wTmZLLUVleVU2MUlsdE1PNVIyb1k5YkdMTC1USzVaZkVqX19tWVp1N29PdmxhY28zV25iYTRVeVI1aDBuN1RaaXNIZ3Robk1Vdmh2ay1R?oc=5",
+  "https://news.google.com/rss/articles/CBMirgFBVV95cUxPdDNKSldOd0dQNktPeHFYdzBNLWZlRkxHTllaLTYxekFFbThiZnROUFE2Y1JpQU04cFhLMjE4bjhNVEpPQk1XNGdCZXJEQlhMWk9WVlFrTjRueEE1TFJCMWQ2M0c4TUpEUzV6dWVzWWliLU9UQVlBMmt2bWU5aW0ydXJUS2VJTGtHNDE1cmNmRGpqUEliNXlfZVU5ZjZpd1V4RXVlTXJLQ25qQm15X3c?oc=5",
+  "https://news.google.com/rss/articles/CBMikAFBVV95cUxQd1U0TTEyekx3YThxZEt0b2tZQkxjLWVpaW9BNV9qVjJKb09Pb18zaGhTR18tVlRRclN1RFBseWZJLWZEc0kxLWFVRG00REJ3VmZjMzdITjlxcVpLQUgxZ3Q4cWlDZm9TTHVZSnB6T3pMbTZHYzdrMGZkcjJvRkVxSDM3M052eWpvZ1ZZSzNtNXU?oc=5",
+  "https://news.google.com/rss/articles/CBMi0wFBVV95cUxOTnp6NS1oeXJCNDhuQmVvYjVORUp1XzllVjFTSUEtX0FCM09zSEp4SlFDbWxKYTcyZXpGUWxKM2NBVGZhYk50Ti1JTXF0SDFDel9QOWNNTUQ1U1VkY1dXcW9LSDB6UG1ueFVyNTMzSzhHQmlka3BqdHdYNFZTb291Q0ZzcmpCaTl5WHIxQjQtTmFKUjhtRDBXQ0lZMDJuSXNhekNSMnVXQkpoWmhXZ1RFMHRkWlZoR2xtRDVaRmxMZmVfdmJsYVpGN1VlcExKVW96YUxr?oc=5",
+  "https://linear.app/security",
+  "https://linear.app/customers",
+  "https://linear.app/docs"
+ ],
+ "research_limit_hit": false,
+ "hunter": {
+  "retrieved_at": "2026-11-18",
+  "from_cache": false,
+  "credits_used": "1"
+ },
+ "hunter_candidates": [
+  {
+   "name": "Conor Muirhead",
+   "first_name": "Conor",
+   "position": "Head of Product Design",
+   "department": "design",
+   "seniority": "executive",
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2024-09-27",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://linear.app/about"
+   ],
+   "email": "c***@linear.app"
+  },
+  {
+   "name": "Adrien Griveau",
+   "first_name": "Adrien",
+   "position": "Founder",
+   "department": "executive",
+   "seniority": "executive",
+   "confidence": 84,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2024-09-27",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://linear.app/about"
+   ],
+   "email": "a***@linear.app"
+  },
+  {
+   "name": "Tuomas Artman",
+   "first_name": "Tuomas",
+   "position": "Co-Founder",
+   "department": "executive",
+   "seniority": "executive",
+   "confidence": 84,
+   "verification": "valid",
+   "source_count": 7,
+   "last_seen_on": "2026-10-07",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://origami.chat/products/contact-enrichment",
+    "https://www.google.com/search?q=site:linkedin.com%20tuomas%20artman%20linear",
+    "https://linear.app/about",
+    "https://komo.ai/directory/linear",
+    "https://remotework360.com/listing/linear-orbit-inc"
+   ],
+   "email": "t***@linear.app"
+  },
+  {
+   "name": "Sarah Chen",
+   "first_name": "Sarah",
+   "position": "Vp Sales",
+   "department": "sales",
+   "seniority": "executive",
+   "confidence": 83,
+   "verification": "valid",
+   "source_count": 12,
+   "last_seen_on": "2026-11-05",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://themvpstudio.in/apps/crow",
+    "https://rebounce.dev/blog/dunning-email-templates",
+    "https://rebounce.dev/es/blog/dunning-email-templates",
+    "https://himetrica.com/lp/revenue",
+    "https://himetrica.com/lp/revenue-attribution"
+   ],
+   "email": "s***@linear.app"
+  },
+  {
+   "name": "Casey Bertenthal",
+   "first_name": "Casey",
+   "position": "Sales Director",
+   "department": "sales",
+   "seniority": "executive",
+   "confidence": 83,
+   "verification": "valid",
+   "source_count": 2,
+   "last_seen_on": "2026-08-30",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20casey%20bertenthal%20linear",
+    "https://linear.app/about"
+   ],
+   "email": "c***@linear.app"
+  },
+  {
+   "name": "Cristina Cordova",
+   "first_name": "Cristina",
+   "position": "Chief Operating Officer",
+   "department": "operations",
+   "seniority": "executive",
+   "confidence": 83,
+   "verification": "valid",
+   "source_count": 2,
+   "last_seen_on": "2026-08-25",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://linear.app/about",
+    "https://www.google.com/search?q=site:linkedin.com%20cristina%20cordova%20linear"
+   ],
+   "email": "c***@linear.app"
+  },
+  {
+   "name": "Brando Roche",
+   "first_name": "Brando",
+   "position": "Director of Go-To-Market Strategy",
+   "department": "management",
+   "seniority": "executive",
+   "confidence": 83,
+   "verification": "valid",
+   "source_count": 2,
+   "last_seen_on": "2026-08-29",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20brando%20roche%20linear",
+    "https://linear.app/about"
+   ],
+   "email": "b***@linear.app"
+  },
+  {
+   "name": "Karri Saarinen",
+   "first_name": "Karri",
+   "position": "CEO",
+   "department": "executive",
+   "seniority": "executive",
+   "confidence": 83,
+   "verification": "valid",
+   "source_count": 2,
+   "last_seen_on": "2024-09-27",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://linear.app/about",
+    "https://nicklafferty.com/reviews/jira-alternatives"
+   ],
+   "email": "k***@linear.app"
+  },
+  {
+   "name": "Jori Lallo",
+   "first_name": "Jori",
+   "position": "Co-Founder",
+   "department": "executive",
+   "seniority": "executive",
+   "confidence": 82,
+   "verification": "valid",
+   "source_count": 7,
+   "last_seen_on": "2026-10-11",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://hizura.com",
+    "https://security-profiles.nudgesecurity.com/app/linear-app",
+    "https://www.google.com/search?q=site:linkedin.com%20jori%20lallo%20linear",
+    "https://linear.app/about",
+    "https://komo.ai/directory/linear"
+   ],
+   "email": "j***@linear.app"
+  },
+  {
+   "name": "Jamie Finnigan",
+   "first_name": "Jamie",
+   "position": "Head of Security",
+   "department": "management",
+   "seniority": "executive",
+   "confidence": 75,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-08-25",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20jamie%20finnigan%20linear"
+   ],
+   "email": "j***@linear.app"
+  }
+ ],
+ "contact_scores": [
+  {
+   "index": 0,
+   "name": "Conor Muirhead",
+   "position": "Head of Product Design",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 2,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 6,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Head of Product Design leads the design function and has no relevance to compliance automation."
+  },
+  {
+   "index": 1,
+   "name": "Adrien Griveau",
+   "position": "Founder",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 2,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 8,
+   "pass": true,
+   "role_category": "technical_founder_ceo",
+   "reasoning": "As a Founder, Adrien has broad executive decision-making authority, but is not the dedicated security or compliance owner."
+  },
+  {
+   "index": 2,
+   "name": "Tuomas Artman",
+   "position": "Co-Founder",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 2,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 8,
+   "pass": true,
+   "role_category": "technical_founder_ceo",
+   "reasoning": "Co-Founder with high executive authority and technical oversight, but not directly managing day-to-day compliance."
+  },
+  {
+   "index": 3,
+   "name": "Sarah Chen",
+   "position": "Vp Sales",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 2,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 6,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "VP of Sales focuses on revenue generation rather than internal compliance or security automation."
+  },
+  {
+   "index": 4,
+   "name": "Casey Bertenthal",
+   "position": "Sales Director",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 2,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 6,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Sales Director is unrelated to compliance and security tooling evaluation."
+  },
+  {
+   "index": 5,
+   "name": "Cristina Cordova",
+   "position": "Chief Operating Officer",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 2,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 8,
+   "pass": true,
+   "role_category": "other",
+   "reasoning": "COO oversees company operations, making her an adjacent executive stakeholder, though technical security/compliance leaders are more direct."
+  },
+  {
+   "index": 6,
+   "name": "Brando Roche",
+   "position": "Director of Go-To-Market Strategy",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 2,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 6,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Director of Go-To-Market Strategy focuses on commercial strategy, with no functional overlap with compliance."
+  },
+  {
+   "index": 7,
+   "name": "Karri Saarinen",
+   "position": "CEO",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 2,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 8,
+   "pass": true,
+   "role_category": "technical_founder_ceo",
+   "reasoning": "CEO holds ultimate authority over company initiatives but is secondary to direct security leadership for compliance automation."
+  },
+  {
+   "index": 8,
+   "name": "Jori Lallo",
+   "position": "Co-Founder",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 2,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 8,
+   "pass": true,
+   "role_category": "technical_founder_ceo",
+   "reasoning": "Co-Founder holds leadership authority, but direct security and compliance ownership sits with dedicated personnel."
+  },
+  {
+   "index": 9,
+   "name": "Jamie Finnigan",
+   "position": "Head of Security",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 2,
+    "ability_to_drive_action": 2,
+    "match_to_need": 2,
+    "identity_quality": 2
+   },
+   "total": 10,
+   "pass": true,
+   "role_category": "security_leader_ciso",
+   "reasoning": "Head of Security directly owns technical security, governance, and compliance workflows, making Jamie the ideal buyer for compliance automation."
+  }
+ ],
+ "contact": {
+  "name": "Jamie Finnigan",
+  "first_name": "Jamie",
+  "position": "Head of Security",
+  "department": "management",
+  "seniority": "executive",
+  "confidence": 75,
+  "verification": "valid",
+  "source_count": 1,
+  "last_seen_on": "2026-08-25",
+  "still_on_page": true,
+  "email_domain_matches_company": true,
+  "source_links": [
+   "https://www.google.com/search?q=site:linkedin.com%20jamie%20finnigan%20linear"
+  ],
+  "email": "j***@linear.app",
+  "score": 10,
+  "scores": {
+   "company_association": 2,
+   "functional_ownership": 2,
+   "ability_to_drive_action": 2,
+   "match_to_need": 2,
+   "identity_quality": 2
+  },
+  "role_category": "security_leader_ciso",
+  "reasoning": "Head of Security directly owns technical security, governance, and compliance workflows, making Jamie the ideal buyer for compliance automation.",
+  "email_verified": true,
+  "why": "Jamie Finnigan, Head of Security: contact score 10/10. Picked as the security leader with the best score among 6 passing of 10 candidates."
+ },
+ "pain_attempts": [
+  {
+   "attempt": 1,
+   "passing": 1,
+   "raw": [
+    {
+     "observed_fact": "Linear maintains multiple compliance commitments including SOC 2 Type II, ISO/IEC 27001:2022, HIPAA, and GDPR across US and EU hosting regions.",
+     "evidence": {
+      "source_url": "https://linear.app/security",
+      "excerpt": "Linear undergoes regular Service Organization Controls audits (SOC 2 Type II). Request SOC 2 \u2192 GDPR compliance Committed to compliance with Europe\u2019s General Data Protection Regulation (GDPR). HIPAA compliance Privacy and security measures to ensure that Protected Health Information (PHI) is appropriately safeguarded. Request BAA \u2192 ISO 27001 certified Linear has achieved ISO/IEC 27001:2022"
+     },
+     "hypothesis": "Managing ongoing control adherence across multiple overlapping standards (SOC 2, ISO 27001, HIPAA, and GDPR) in multi-region infrastructure may lead to challenges in tracking control health continuously between audit cycles.",
+     "role_relevance": "As Head of Security, Jamie Finnigan is likely accountable for ensuring technical and organizational security controls remain effective across all supported frameworks without drift.",
+     "possible_consequence": "Undetected control gaps or configuration drift across regions could potentially lead to remediation burdens or complications during annual re-certification audits.",
+     "capability": "continuous control monitoring",
+     "scores": {
+      "account_specific_evidence": 3,
+      "relevance_to_person": 2,
+      "plausible_business_consequence": 2,
+      "capability_match": 2,
+      "honest_wording": 1
+     },
+     "total": 10,
+     "pass": true
+    },
+    {
+     "observed_fact": "Linear serves enterprise and regulated clients such as Oscar, Mercury, and Coinbase, and provides security reports and BAAs via gated requests.",
+     "evidence": {
+      "source_url": "https://linear.app/customers",
+      "excerpt": "Salesforce SaaS, Enterprise Visit site \u2197 Scale How Scale compressed bug resolution time by 52% AI, Enterprise Read story \u2192 Mercury Mercury eliminated cluttered feedback with Linear Asks Fintech, Ente Coinbase\u2019s bet on agent-first development Watch video \u2192 How teams at Oscar left one of the world\u2019s most complex Jira instances"
+     },
+     "hypothesis": "Handling security assurance documentation and BAA verification for enterprise prospects in regulated sectors like healthcare and fintech may require recurring effort to manage and share validated compliance artifacts.",
+     "role_relevance": "As Head of Security, Jamie Finnigan likely oversees how security posture is represented and validated to enterprise customer security evaluation teams.",
+     "possible_consequence": "Fulfilling recurring inbound security assessments and documentation requests manually could potentially increase the administrative workload on the security team during enterprise deal evaluations.",
+     "capability": "customer trust documentation",
+     "scores": {
+      "account_specific_evidence": 3,
+      "relevance_to_person": 2,
+      "plausible_business_consequence": 2,
+      "capability_match": 2,
+      "honest_wording": 1
+     },
+     "total": 10,
+     "pass": false
+    }
+   ]
+  },
+  {
+   "attempt": 2,
+   "passing": 2,
+   "raw": [
+    {
+     "observed_fact": "Linear maintains multiple compliance certifications and standards, including ISO/IEC 27001:2022 and HIPAA.",
+     "evidence": {
+      "source_url": "https://linear.app/security",
+      "excerpt": "HIPAA compliance Privacy and security measures to ensure that Protected Health Information (PHI) is appropriately safeguarded. Request BAA \u2192 ISO 27001 certified Linear has achieved ISO/IEC 27001:2022"
+     },
+     "hypothesis": "Jamie Finnigan may find that gathering and recurringly validating audit artifacts across multiple frameworks like ISO 27001:2022 and HIPAA requires ongoing cross-functional coordination.",
+     "role_relevance": "As Head of Security, Jamie Finnigan is likely responsible for overseeing framework adherence and ensuring compliance audit readiness across product and infrastructure systems.",
+     "possible_consequence": "Without automated collection mechanisms, recurring audit cycles may pull security and engineering attention away from core security initiatives during evaluation periods.",
+     "capability": "evidence collection",
+     "scores": {
+      "account_specific_evidence": 3,
+      "relevance_to_person": 2,
+      "plausible_business_consequence": 2,
+      "capability_match": 2,
+      "honest_wording": 1
+     },
+     "total": 10,
+     "pass": true
+    },
+    {
+     "observed_fact": "Linear provides SOC 2 Type II audit reports and GDPR compliance documentation upon request to prospective and existing clients.",
+     "evidence": {
+      "source_url": "https://linear.app/security",
+      "excerpt": "Linear undergoes regular Service Organization Controls audits (SOC 2 Type II). Request SOC 2 \u2192 GDPR compliance Committed to compliance with Europe\u2019s General Data Protection Regulation (GDPR)."
+     },
+     "hypothesis": "Jamie Finnigan may experience recurring demand from enterprise buyer security teams seeking SOC 2 reports, compliance attestations, and security posture verification.",
+     "role_relevance": "As Head of Security, Jamie Finnigan likely oversees the security review workflow and the distribution of trust collateral to enterprise prospects.",
+     "possible_consequence": "Handling prospective buyer security inquiries individually may introduce review delays that slow enterprise procurement cycles.",
+     "capability": "customer trust documentation",
+     "scores": {
+      "account_specific_evidence": 2,
+      "relevance_to_person": 2,
+      "plausible_business_consequence": 2,
+      "capability_match": 2,
+      "honest_wording": 1
+     },
+     "total": 9,
+     "pass": true
+    }
+   ]
+  }
+ ],
+ "pain_points": [
+  {
+   "observed_fact": "Linear maintains multiple compliance certifications and standards, including ISO/IEC 27001:2022 and HIPAA.",
+   "evidence": {
+    "source_url": "https://linear.app/security",
+    "excerpt": "HIPAA compliance Privacy and security measures to ensure that Protected Health Information (PHI) is appropriately safeguarded. Request BAA \u2192 ISO 27001 certified Linear has achieved ISO/IEC 27001:2022"
+   },
+   "hypothesis": "Jamie Finnigan may find that gathering and recurringly validating audit artifacts across multiple frameworks like ISO 27001:2022 and HIPAA requires ongoing cross-functional coordination.",
+   "role_relevance": "As Head of Security, Jamie Finnigan is likely responsible for overseeing framework adherence and ensuring compliance audit readiness across product and infrastructure systems.",
+   "possible_consequence": "Without automated collection mechanisms, recurring audit cycles may pull security and engineering attention away from core security initiatives during evaluation periods.",
+   "capability": "evidence collection",
+   "scores": {
+    "account_specific_evidence": 3,
+    "relevance_to_person": 2,
+    "plausible_business_consequence": 2,
+    "capability_match": 2,
+    "honest_wording": 1
+   },
+   "total": 10,
+   "pass": true
+  },
+  {
+   "observed_fact": "Linear provides SOC 2 Type II audit reports and GDPR compliance documentation upon request to prospective and existing clients.",
+   "evidence": {
+    "source_url": "https://linear.app/security",
+    "excerpt": "Linear undergoes regular Service Organization Controls audits (SOC 2 Type II). Request SOC 2 \u2192 GDPR compliance Committed to compliance with Europe\u2019s General Data Protection Regulation (GDPR)."
+   },
+   "hypothesis": "Jamie Finnigan may experience recurring demand from enterprise buyer security teams seeking SOC 2 reports, compliance attestations, and security posture verification.",
+   "role_relevance": "As Head of Security, Jamie Finnigan likely oversees the security review workflow and the distribution of trust collateral to enterprise prospects.",
+   "possible_consequence": "Handling prospective buyer security inquiries individually may introduce review delays that slow enterprise procurement cycles.",
+   "capability": "customer trust documentation",
+   "scores": {
+    "account_specific_evidence": 2,
+    "relevance_to_person": 2,
+    "plausible_business_consequence": 2,
+    "capability_match": 2,
+    "honest_wording": 1
+   },
+   "total": 9,
+   "pass": true
+  }
+ ],
+ "email_attempts": [
+  {
+   "revision": 0,
+   "words": 88,
+   "qa_total": 10,
+   "qa_scores": {
+    "specific_hook": 2,
+    "useful_hypothesis": 2,
+    "relevant_value": 2,
+    "simple_next_step": 2,
+    "clarity": 2
+   },
+   "mandatory": {
+    "correct_person_and_company": true,
+    "evidence_for_every_factual_claim": true,
+    "hypothesis_phrased_tentatively": true,
+    "no_invented_metrics_relationships_urgency_guarantees": true,
+    "no_false_re_or_following_up": true,
+    "no_unsupported_compliance_deficiency": true,
+    "addressed_by_name": true,
+    "one_primary_pain": true
+   },
+   "mandatory_ok": true,
+   "code_problems": [],
+   "feedback": "Well-crafted cold email that cleanly uses verified evidence, phrases the operational pain tentatively, ties directly to Sprinto's core mapping capability, and finishes with a low-friction call to action.",
+   "passed": true,
+   "subject": "Evidence collection across ISO 27001 and HIPAA",
+   "body": "Hi Jamie,\n\nI saw on Linear's security page that your team maintains multiple compliance standards, including ISO/IEC 27001:2022 and HIPAA.\n\nWith multiple frameworks in place, recurringly gathering and validating audit artifacts might require ongoing cross-functional coordination that takes focus away from core security initiatives.\n\nSprinto helps security leads address this through automated evidence collection, continuously pulling live proof from your tech stack and automatically mapping it to overlapping controls across standards.\n\nWould you be open to a brief chat next week to explore how this works?\n\nBest,\nNamratha"
+  }
+ ],
+ "draft": {
+  "subject": "Evidence collection across ISO 27001 and HIPAA",
+  "body": "Hi Jamie,\n\nI saw on Linear's security page that your team maintains multiple compliance standards, including ISO/IEC 27001:2022 and HIPAA.\n\nWith multiple frameworks in place, recurringly gathering and validating audit artifacts might require ongoing cross-functional coordination that takes focus away from core security initiatives.\n\nSprinto helps security leads address this through automated evidence collection, continuously pulling live proof from your tech stack and automatically mapping it to overlapping controls across standards.\n\nWould you be open to a brief chat next week to explore how this works?\n\nBest,\nNamratha"
+ },
+ "original_draft": {
+  "subject": "Evidence collection across ISO 27001 and HIPAA",
+  "body": "Hi Jamie,\n\nI saw on Linear's security page that your team maintains multiple compliance standards, including ISO/IEC 27001:2022 and HIPAA.\n\nWith multiple frameworks in place, recurringly gathering and validating audit artifacts might require ongoing cross-functional coordination that takes focus away from core security initiatives.\n\nSprinto helps security leads address this through automated evidence collection, continuously pulling live proof from your tech stack and automatically mapping it to overlapping controls across standards.\n\nWould you be open to a brief chat next week to explore how this works?\n\nBest,\nNamratha"
+ },
+ "qa_total": 10,
+ "usage": {
+  "calls": 6,
+  "prompt_tokens": 9565,
+  "output_tokens": 4136,
+  "thought_tokens": 5320,
+  "model": "gemini-3.8-flash"
+ },
+ "escalation": null,
+ "hunter_calls_this_run_so_far": 2
+}

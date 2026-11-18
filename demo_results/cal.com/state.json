@@ -1,0 +1,722 @@
+{
+ "domain": "cal.com",
+ "run_date": "2026-11-18",
+ "status": "DRAFT_READY",
+ "stage": "done",
+ "timing": {
+  "started_at": "2026-11-18T23:56:35",
+  "finished_at": "2026-11-18T23:58:52",
+  "seconds": 137.3
+ },
+ "pages": [
+  {
+   "url": "https://cal.com",
+   "type": "homepage",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  },
+  {
+   "url": "https://cal.com/compliance",
+   "type": "security",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  },
+  {
+   "url": "https://cal.com/customers/deel",
+   "type": "customers",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  },
+  {
+   "url": "https://cal.com/docs",
+   "type": "product",
+   "round": 0,
+   "status": "ok",
+   "attempts": 1,
+   "from_cache": false,
+   "guessed_path": false
+  }
+ ],
+ "rounds": [
+  {
+   "round": 0,
+   "gap": null,
+   "source": [
+    "https://cal.com/compliance",
+    "https://cal.com/customers/deel",
+    "https://cal.com/docs",
+    "homepage",
+    "Google News headlines"
+   ],
+   "new_evidence": [
+    {
+     "dimension": "business_fit",
+     "source_url": "https://cal.com/compliance",
+     "excerpt": "A scheduling tool is not a side app. It holds standing access to your calendars and collects personal data from everyone who books.",
+     "dated": null
+    },
+    {
+     "dimension": "customer_trust",
+     "source_url": "https://cal.com/customers/deel",
+     "excerpt": "Deel runs its entire company on Cal.com: sales, customer support, operations and more, each team with links and rules tailored to how it works.",
+     "dated": "2025-03-12"
+    },
+    {
+     "dimension": "customer_trust",
+     "source_url": "https://cal.com/compliance",
+     "excerpt": "Healthcare & wellness Manage patient scheduling, telehealth sessions, and client intakes with full HIPAA compliance and automated reminders.",
+     "dated": null
+    },
+    {
+     "dimension": "compliance_workload",
+     "source_url": "https://cal.com/compliance",
+     "excerpt": "Cal.com, Inc. is SOC 2 Type II and ISO/IEC 27001 certified, and every audit since our first certification in 2022 has been flawless. We sign BAAs for HIPAA and a DPA for the GDPR and the CCPA",
+     "dated": null
+    },
+    {
+     "dimension": "reason_now",
+     "source_url": "https://cal.com/compliance",
+     "excerpt": "Last reviewed on 18 November 2026 . This page is information, not legal advice.",
+     "dated": "2026-11-18"
+    },
+    {
+     "dimension": "delivery_complexity",
+     "source_url": "https://cal.com/compliance",
+     "excerpt": "A Data Processing Agreement with standard contractual clauses, the Data Privacy Framework for transfers, and Cal.eu for hosting in the EU.",
+     "dated": null
+    }
+   ],
+   "revised_decision": "QUALIFIED"
+  }
+ ],
+ "reason": "Draft ready for your review.",
+ "flags": [
+  "funding_stage_unknown"
+ ],
+ "assessment": {
+  "company_name": "Cal.com",
+  "business_model": "saas",
+  "is_direct_compliance_platform_competitor": false,
+  "is_unrelated_business": false,
+  "disqualifier_evidence": null,
+  "funding": {
+   "stage": "unknown",
+   "date": null,
+   "evidence": null
+  },
+  "employee_count": {
+   "value": null,
+   "evidence": null
+  },
+  "dimensions": {
+   "business_fit": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Cal.com provides cloud-based scheduling software that handles calendar access and customer personal booking data.",
+    "evidence": [
+     {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "A scheduling tool is not a side app. It holds standing access to your calendars and collects personal data from everyone who books.",
+      "dated": null
+     }
+    ]
+   },
+   "customer_trust": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Cal.com serves large enterprise customers like Deel and caters to regulated sectors like healthcare, government, and finance.",
+    "evidence": [
+     {
+      "source_url": "https://cal.com/customers/deel",
+      "excerpt": "Deel runs its entire company on Cal.com: sales, customer support, operations and more, each team with links and rules tailored to how it works.",
+      "dated": "2025-03-12"
+     },
+     {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "Healthcare & wellness Manage patient scheduling, telehealth sessions, and client intakes with full HIPAA compliance and automated reminders.",
+      "dated": null
+     }
+    ]
+   },
+   "compliance_workload": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Cal.com maintains ongoing SOC 2 Type II and ISO/IEC 27001 annual audits, signs HIPAA BAAs and GDPR DPAs, and participates in the EU-U.S. Data Privacy Framework.",
+    "evidence": [
+     {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "Cal.com, Inc. is SOC 2 Type II and ISO/IEC 27001 certified, and every audit since our first certification in 2022 has been flawless. We sign BAAs for HIPAA and a DPA for the GDPR and the CCPA",
+      "dated": null
+     }
+    ]
+   },
+   "reason_now": {
+    "level": 0,
+    "state": "missing",
+    "reasoning": "No dated expansion, enterprise launch, upcoming audit deadline, or hiring signal within the 6-to-12 month window is evidenced.",
+    "evidence": [
+     {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "Last reviewed on 18 November 2026 . This page is information, not legal advice.",
+      "dated": "2026-11-18"
+     }
+    ]
+   },
+   "delivery_complexity": {
+    "level": 2,
+    "state": "positive",
+    "reasoning": "Maintains multiple compliance frameworks (SOC 2, ISO 27001, HIPAA, GDPR, CCPA) across multiple environments and regions including EU hosting (Cal.eu), desktop, and API integrations.",
+    "evidence": [
+     {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "A Data Processing Agreement with standard contractual clauses, the Data Privacy Framework for transfers, and Cal.eu for hosting in the EU.",
+      "dated": null
+     }
+    ]
+   }
+  },
+  "compliance_claims_exact": [
+   "Cal.com, Inc. is SOC 2 Type II and ISO/IEC 27001 certified, and every audit since our first certification in 2022 has been flawless.",
+   "We sign BAAs for HIPAA and a DPA for the GDPR and the CCPA, and we are on the EU-U.S. Data Privacy Framework List."
+  ],
+  "named_customers": [
+   "Deel"
+  ],
+  "hiring_signals": [],
+  "missing": [
+   {
+    "gap": "Cal.com internal employee count",
+    "page_type": "about"
+   },
+   {
+    "gap": "Active upcoming compliance audit timelines or recent compliance hiring",
+    "page_type": "careers"
+   }
+  ],
+  "verification_notes": []
+ },
+ "gates": {
+  "saas": {
+   "state": "passed",
+   "detail": "business fit level 2 (needs 2)"
+  },
+  "series": {
+   "state": "unknown",
+   "detail": "no dated source names the funding round (flagged, company continues)"
+  },
+  "compliance": {
+   "state": "passed",
+   "detail": "compliance workload level 2 (needs 1)"
+  },
+  "score": {
+   "state": "passed",
+   "detail": "80/100 (needs 65)"
+  }
+ },
+ "points": {
+  "business_fit": 25.0,
+  "customer_trust": 20.0,
+  "compliance_workload": 25.0,
+  "reason_now": 0.0,
+  "delivery_complexity": 10.0
+ },
+ "total": 80.0,
+ "sources_used": [
+  "https://cal.com/",
+  "https://news.google.com/rss/articles/CBMikgFBVV95cUxOZ2xJaGFaRnZXdFFLem9XWDYyUVFlZldHRkNwU2xDazJTUTZ2UDZxV0FPZGZ6VW1wTU1lY2NzZVhyZ3g3M0RuMGRQQ2RoMjhZcEZ0Ulg4MTdfR0xfWjNLZkh3cmVIZHEwbDZETXNnQzB6SVB5TXhmMmQ3Q2UycDl0WlUyQ0c0V0pQMTZsRlpIbVRvUQ?oc=5",
+  "https://news.google.com/rss/articles/CBMihAFBVV95cUxNcHozeGViNGk1SFpKZU4yUVZ4MGluaEdBd2VjczZ1OFRyT2dwUUFlOGExTlpVeVlDYTZ4dXVINXlDSWtvZ0RFTnFabl9FZmN4S1AwQzFBZFQybEhRQXFONG8tWG9hTklmd2ZqcG01aFAtOGtWV2lFWUJhU1F3ZGN4eWJScUE?oc=5",
+  "https://news.google.com/rss/articles/CBMihgFBVV95cUxOYXRUNjZpcF93aHdVT0RWZkltaTVEQnFuTEF2Vm5KSzBiZHRySHRlTVR6d2ZWdVk1OEEydnNHcS1ESGNJTVBBNzF2eDdvYlRkc0RZcHd2UmQ0OENCRFc2eU8wTV9rVk5kQVlqUUw1R1BJNFI5QlNUYktRTzIyQlFDT0V2QWpOQQ?oc=5",
+  "https://news.google.com/rss/articles/CBMiswFBVV95cUxOWjVJZENMT2MwN1ZuZzJNdnM3TGYySVdkTDVObVVOYjUwaUtMNTE3bkozUzhCRXBmN1J6N3A3bTlTR1dpeHBHekFqMUZndWFWckoxRVUyU3FqOGRJU2RDd2Z2Wlo2dUQ3azNLMHNsNm1qVU4tbTFHS1NHUC1kQVAwVlQ1SzBmZm9fd0Z0U252YmMxX2VTMUJjblZOM1o0VDFwRkQtblJFbThoOWtoWGVGb21LZw?oc=5",
+  "https://news.google.com/rss/articles/CBMiTkFVX3lxTE5wR3kwbkxzbXR2cjhJUzVWY3ZDYXQwTW9ENXVCSmZQRUlGY0w4NUVtWnpRYU9QLXVzRHpYLVAzUEowVjFiWnp0LXBCSWV4UQ?oc=5",
+  "https://news.google.com/rss/articles/CBMioAFBVV95cUxOZ1FPeUxrSVgxX3laM2lCYkFXZ3p2dHo4MFNkbmtnRXpwajNVLV8teVBDR0VKTGtnYnFXNnNramhTNElobUQxeXFGdlA0Z1Nab2RnVERUeXZyd2U4UVAtNVlaeEtnSDRrN3pyNzh1b3dRU1ktUHBvbHNKd1JMQXIzTUNfNmZ5TVMzUDVkd1ZqRno4WVpfc083R2NqdGp4d1BX?oc=5",
+  "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5IcUlQNHFpdVlWYU9UYTIycXRNakg4cWEyMUx5dVk5Rkp1V2FvLWp0eVJBMF9xOTc0UlVrVXMxZXRmLW5aRFVxdDFINmJCY1hsM2JqUzJxdjc?oc=5",
+  "https://news.google.com/rss/articles/CBMilgFBVV95cUxQX25LcF9uenVmZmFiRHZQZi1UZER4UGVzYk05NUFVSm4zeXZCTkdpTHNoblVYSEUyS2tUOXYyTmZRa3VLMngwRUFuVENmN3VLNFNRRXNtQ2t3S0JmZEx2NWZ2dWdrWFhEU3JENHJlc1JxSGNJenV5NjA5YmlLX3Bwam9iLXVKWjU2Tmt5a2h3TXRsU0JDZVE?oc=5",
+  "https://cal.com/compliance",
+  "https://cal.com/customers/deel",
+  "https://cal.com/docs/api-reference/v2/introduction"
+ ],
+ "research_limit_hit": false,
+ "hunter": {
+  "retrieved_at": "2026-11-18",
+  "from_cache": false,
+  "credits_used": "1"
+ },
+ "hunter_candidates": [
+  {
+   "name": "Keith Williams",
+   "first_name": "Keith",
+   "position": "Director of Engineering",
+   "department": "it",
+   "seniority": "executive",
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-08-28",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20keith%20williams%20cal"
+   ],
+   "email": "k***@cal.com"
+  },
+  {
+   "name": "Volnei Munhoz",
+   "first_name": "Volnei",
+   "position": "Engineer",
+   "department": "it",
+   "seniority": null,
+   "confidence": 85,
+   "verification": null,
+   "source_count": 1,
+   "last_seen_on": "2026-10-18",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20volnei%20munhoz%20cal"
+   ],
+   "email": "v***@cal.com"
+  },
+  {
+   "name": "Reilly Barry",
+   "first_name": "Reilly",
+   "position": "Account Executive",
+   "department": "sales",
+   "seniority": "executive",
+   "confidence": 85,
+   "verification": null,
+   "source_count": 1,
+   "last_seen_on": "2026-10-17",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20reilly%20barry%20cal"
+   ],
+   "email": "r***@cal.com"
+  },
+  {
+   "name": "Juan Stiza",
+   "first_name": "Juan",
+   "position": "Software Engineer",
+   "department": "it",
+   "seniority": null,
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-09-07",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20juan%20stiza%20cal"
+   ],
+   "email": "j***@cal.com"
+  },
+  {
+   "name": "C\u00e9dric Ravesteijn",
+   "first_name": "C\u00e9dric",
+   "position": "GTM Manager",
+   "department": "marketing",
+   "seniority": "senior",
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-09-02",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20c%C3%A9dric%20ravesteijn%20cal"
+   ],
+   "email": "c***@cal.com"
+  },
+  {
+   "name": "Anik Babu",
+   "first_name": "Anik",
+   "position": "Software Engineer",
+   "department": "it",
+   "seniority": null,
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-08-24",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20anik%20babu%20cal"
+   ],
+   "email": "a***@cal.com"
+  },
+  {
+   "name": "Lauris Skraucis",
+   "first_name": "Lauris",
+   "position": "Software Engineer",
+   "department": "it",
+   "seniority": null,
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-08-25",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20lauris%20skraucis%20cal"
+   ],
+   "email": "l***@cal.com"
+  },
+  {
+   "name": "Jose Ure\u00f1a",
+   "first_name": "Jose",
+   "position": "Technical Support Specialist",
+   "department": "support",
+   "seniority": "senior",
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2025-12-20",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20jose%20ure%C3%B1a%20cal"
+   ],
+   "email": "j***@cal.com"
+  },
+  {
+   "name": "Rajiv Sahal",
+   "first_name": "Rajiv",
+   "position": "Full Stack Engineer",
+   "department": "it",
+   "seniority": null,
+   "confidence": 85,
+   "verification": "valid",
+   "source_count": 1,
+   "last_seen_on": "2026-08-22",
+   "still_on_page": true,
+   "email_domain_matches_company": true,
+   "source_links": [
+    "https://www.google.com/search?q=site:linkedin.com%20rajiv%20sahal%20cal"
+   ],
+   "email": "r***@cal.com"
+  }
+ ],
+ "contact_scores": [
+  {
+   "index": 0,
+   "name": "Keith Williams",
+   "position": "Director of Engineering",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 2,
+    "ability_to_drive_action": 2,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 9,
+   "pass": true,
+   "role_category": "cto_vp_engineering",
+   "reasoning": "Director of Engineering serves as a technical leader who oversees engineering infrastructure and technical compliance requirements in the absence of a dedicated GRC team."
+  },
+  {
+   "index": 1,
+   "name": "Volnei Munhoz",
+   "position": "Engineer",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 1,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 7,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Engineer is an individual technical contributor without executive authority over compliance automation tooling."
+  },
+  {
+   "index": 2,
+   "name": "Reilly Barry",
+   "position": "Account Executive",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 1,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 5,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Account Executive works in sales and has no ownership over internal compliance or technical infrastructure."
+  },
+  {
+   "index": 3,
+   "name": "Juan Stiza",
+   "position": "Software Engineer",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 1,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 7,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Software Engineer is an individual contributor adjacent to technical implementation, lacking decision-making authority for compliance tools."
+  },
+  {
+   "index": 4,
+   "name": "C\u00e9dric Ravesteijn",
+   "position": "GTM Manager",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 1,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 5,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "GTM Manager in marketing handles go-to-market strategy, which is unrelated to compliance automation."
+  },
+  {
+   "index": 5,
+   "name": "Anik Babu",
+   "position": "Software Engineer",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 1,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 7,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Software Engineer is an individual contributor without responsibility for organization-wide compliance solutions."
+  },
+  {
+   "index": 6,
+   "name": "Lauris Skraucis",
+   "position": "Software Engineer",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 1,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 7,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Software Engineer lacks functional ownership and decision-making power over compliance operations."
+  },
+  {
+   "index": 7,
+   "name": "Jose Ure\u00f1a",
+   "position": "Technical Support Specialist",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 0,
+    "ability_to_drive_action": 1,
+    "match_to_need": 0,
+    "identity_quality": 2
+   },
+   "total": 5,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Technical Support Specialist operates in customer support, unrelated to internal security or compliance automation."
+  },
+  {
+   "index": 8,
+   "name": "Rajiv Sahal",
+   "position": "Full Stack Engineer",
+   "scores": {
+    "company_association": 2,
+    "functional_ownership": 1,
+    "ability_to_drive_action": 1,
+    "match_to_need": 1,
+    "identity_quality": 2
+   },
+   "total": 7,
+   "pass": false,
+   "role_category": "other",
+   "reasoning": "Full Stack Engineer is an individual developer without authority over compliance tooling or governance."
+  }
+ ],
+ "contact": {
+  "name": "Keith Williams",
+  "first_name": "Keith",
+  "position": "Director of Engineering",
+  "department": "it",
+  "seniority": "executive",
+  "confidence": 85,
+  "verification": "valid",
+  "source_count": 1,
+  "last_seen_on": "2026-08-28",
+  "still_on_page": true,
+  "email_domain_matches_company": true,
+  "source_links": [
+   "https://www.google.com/search?q=site:linkedin.com%20keith%20williams%20cal"
+  ],
+  "email": "k***@cal.com",
+  "score": 9,
+  "scores": {
+   "company_association": 2,
+   "functional_ownership": 2,
+   "ability_to_drive_action": 2,
+   "match_to_need": 1,
+   "identity_quality": 2
+  },
+  "role_category": "cto_vp_engineering",
+  "reasoning": "Director of Engineering serves as a technical leader who oversees engineering infrastructure and technical compliance requirements in the absence of a dedicated GRC team.",
+  "email_verified": true,
+  "why": "Keith Williams, Director of Engineering: contact score 9/10. Picked as the CTO / engineering head with the best score among 1 passing of 9 candidates."
+ },
+ "pain_attempts": [
+  {
+   "attempt": 1,
+   "passing": 2,
+   "raw": [
+    {
+     "observed_fact": "Cal.com maintains SOC 2 Type II and ISO/IEC 27001 certifications alongside signing BAAs for HIPAA and DPAs for GDPR/CCPA.",
+     "evidence": {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "Cal.com, Inc. is SOC 2 Type II and ISO/IEC 27001 certified, and every audit since our first certification in 2022 has been flawless. We sign BAAs for HIPAA and a DPA for the GDPR and the CCPA"
+     },
+     "hypothesis": "Maintaining continuous compliance across multiple frameworks (SOC 2, ISO 27001, and HIPAA) across engineering infrastructure may require ongoing oversight to ensure technical controls do not drift between annual audit cycles.",
+     "role_relevance": "As Director of Engineering, Keith Williams is likely responsible for ensuring engineering environments, deployment pipelines, and system configurations continuously adhere to these established security controls.",
+     "possible_consequence": "Undetected control drift could potentially lead to unexpected remediation work or findings during recurring audit evaluations.",
+     "capability": "continuous control monitoring",
+     "scores": {
+      "account_specific_evidence": 3,
+      "relevance_to_person": 2,
+      "plausible_business_consequence": 2,
+      "capability_match": 2,
+      "honest_wording": 1
+     },
+     "total": 10,
+     "pass": true
+    },
+    {
+     "observed_fact": "Cal.com requires standing calendar access, stores personal booking data, and serves enterprise and healthcare organizations that require BAAs.",
+     "evidence": {
+      "source_url": "https://cal.com/compliance",
+      "excerpt": "A scheduling tool is not a side app. It holds standing access to your calendars and collects personal data from everyone who books."
+     },
+     "hypothesis": "Because the platform requires standing access to calendar infrastructure and personal data, enterprise and healthcare prospects may frequently request detailed proof of security posture and compliance documentation before granting integration access.",
+     "role_relevance": "As Director of Engineering, Keith Williams may frequently be called upon to provide technical security documentation and validate architectural controls for prospective enterprise evaluations.",
+     "possible_consequence": "Managing recurring technical inquiries and security validation requests from prospects may divert engineering leadership bandwidth away from core product development.",
+     "capability": "customer trust documentation",
+     "scores": {
+      "account_specific_evidence": 3,
+      "relevance_to_person": 2,
+      "plausible_business_consequence": 2,
+      "capability_match": 2,
+      "honest_wording": 1
+     },
+     "total": 10,
+     "pass": true
+    }
+   ]
+  }
+ ],
+ "pain_points": [
+  {
+   "observed_fact": "Cal.com maintains SOC 2 Type II and ISO/IEC 27001 certifications alongside signing BAAs for HIPAA and DPAs for GDPR/CCPA.",
+   "evidence": {
+    "source_url": "https://cal.com/compliance",
+    "excerpt": "Cal.com, Inc. is SOC 2 Type II and ISO/IEC 27001 certified, and every audit since our first certification in 2022 has been flawless. We sign BAAs for HIPAA and a DPA for the GDPR and the CCPA"
+   },
+   "hypothesis": "Maintaining continuous compliance across multiple frameworks (SOC 2, ISO 27001, and HIPAA) across engineering infrastructure may require ongoing oversight to ensure technical controls do not drift between annual audit cycles.",
+   "role_relevance": "As Director of Engineering, Keith Williams is likely responsible for ensuring engineering environments, deployment pipelines, and system configurations continuously adhere to these established security controls.",
+   "possible_consequence": "Undetected control drift could potentially lead to unexpected remediation work or findings during recurring audit evaluations.",
+   "capability": "continuous control monitoring",
+   "scores": {
+    "account_specific_evidence": 3,
+    "relevance_to_person": 2,
+    "plausible_business_consequence": 2,
+    "capability_match": 2,
+    "honest_wording": 1
+   },
+   "total": 10,
+   "pass": true
+  },
+  {
+   "observed_fact": "Cal.com requires standing calendar access, stores personal booking data, and serves enterprise and healthcare organizations that require BAAs.",
+   "evidence": {
+    "source_url": "https://cal.com/compliance",
+    "excerpt": "A scheduling tool is not a side app. It holds standing access to your calendars and collects personal data from everyone who books."
+   },
+   "hypothesis": "Because the platform requires standing access to calendar infrastructure and personal data, enterprise and healthcare prospects may frequently request detailed proof of security posture and compliance documentation before granting integration access.",
+   "role_relevance": "As Director of Engineering, Keith Williams may frequently be called upon to provide technical security documentation and validate architectural controls for prospective enterprise evaluations.",
+   "possible_consequence": "Managing recurring technical inquiries and security validation requests from prospects may divert engineering leadership bandwidth away from core product development.",
+   "capability": "customer trust documentation",
+   "scores": {
+    "account_specific_evidence": 3,
+    "relevance_to_person": 2,
+    "plausible_business_consequence": 2,
+    "capability_match": 2,
+    "honest_wording": 1
+   },
+   "total": 10,
+   "pass": true
+  }
+ ],
+ "email_attempts": [
+  {
+   "revision": 0,
+   "words": 93,
+   "qa_total": 10,
+   "qa_scores": {
+    "specific_hook": 2,
+    "useful_hypothesis": 2,
+    "relevant_value": 2,
+    "simple_next_step": 2,
+    "clarity": 2
+   },
+   "mandatory": {
+    "correct_person_and_company": true,
+    "evidence_for_every_factual_claim": true,
+    "hypothesis_phrased_tentatively": true,
+    "no_invented_metrics_relationships_urgency_guarantees": true,
+    "no_false_re_or_following_up": true,
+    "no_unsupported_compliance_deficiency": true,
+    "addressed_by_name": true,
+    "one_primary_pain": true
+   },
+   "mandatory_ok": true,
+   "code_problems": [],
+   "feedback": "Excellent email that meets all criteria. The hook directly leverages verified public security postures, smoothly bridges to an engineering problem (preventing control drift across multiple frameworks), presents a tightly aligned Sprinto capability, and concludes with a polite, low-friction call to action.",
+   "passed": true,
+   "subject": "Monitoring technical controls at Cal.com",
+   "body": "Hi Keith,\n\nI noticed Cal.com maintains SOC 2 Type II and ISO 27001 certifications alongside supporting HIPAA BAAs and DPAs.\n\nWith multiple frameworks spanning your engineering infrastructure, ensuring technical controls do not quietly drift between audit cycles might require steady oversight from your team.\n\nSprinto helps address this through continuous control monitoring, connecting directly to your cloud environments to monitor configurations and surface any control deviations across your frameworks in real time.\n\nWould you be open to a brief conversation next week to see how this fits into your current setup?\n\nBest,\nNamratha"
+  }
+ ],
+ "draft": {
+  "subject": "Monitoring technical controls at Cal.com",
+  "body": "Hi Keith,\n\nI noticed Cal.com maintains SOC 2 Type II and ISO 27001 certifications alongside supporting HIPAA BAAs and DPAs.\n\nWith multiple frameworks spanning your engineering infrastructure, ensuring technical controls do not quietly drift between audit cycles might require steady oversight from your team.\n\nSprinto helps address this through continuous control monitoring, connecting directly to your cloud environments to monitor configurations and surface any control deviations across your frameworks in real time.\n\nWould you be open to a brief conversation next week to see how this fits into your current setup?\n\nBest,\nNamratha"
+ },
+ "original_draft": {
+  "subject": "Monitoring technical controls at Cal.com",
+  "body": "Hi Keith,\n\nI noticed Cal.com maintains SOC 2 Type II and ISO 27001 certifications alongside supporting HIPAA BAAs and DPAs.\n\nWith multiple frameworks spanning your engineering infrastructure, ensuring technical controls do not quietly drift between audit cycles might require steady oversight from your team.\n\nSprinto helps address this through continuous control monitoring, connecting directly to your cloud environments to monitor configurations and surface any control deviations across your frameworks in real time.\n\nWould you be open to a brief conversation next week to see how this fits into your current setup?\n\nBest,\nNamratha"
+ },
+ "qa_total": 10,
+ "usage": {
+  "calls": 6,
+  "prompt_tokens": 19786,
+  "output_tokens": 3199,
+  "thought_tokens": 13803,
+  "model": "gemini-3.8-flash",
+  "retries": 1
+ },
+ "escalation": null,
+ "hunter_calls_this_run_so_far": 1
+}
