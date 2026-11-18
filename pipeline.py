@@ -94,17 +94,14 @@ def extract_text(html):
 
 def fetch_page(url):
     """Cached for S.PAGE_CACHE_DAYS days. A page is never refetched inside that window without a reason."""
-    os.makedirs(S.CACHE, exist_ok=True)
-    cp = os.path.join(S.CACHE, hashlib.md5(url.encode()).hexdigest() + ".json")
-    if os.path.exists(cp):
+    ck = "page_" + hashlib.md5(url.encode()).hexdigest()
+    res = S.kv_get("cache", ck)
+    if res:
         try:
-            with open(cp, encoding="utf-8") as f:
-                res = json.load(f)
-            age = (dt.date.today() - dt.date.fromisoformat(res["retrieved_at"])).days
-            if age <= S.PAGE_CACHE_DAYS:
+            if (dt.date.today() - dt.date.fromisoformat(res["retrieved_at"])).days <= S.PAGE_CACHE_DAYS:
                 res["from_cache"] = True
                 return res
-        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        except (KeyError, ValueError):
             pass
     label, r, attempts = http_get(url)
     res = {"url": url, "status": label, "text": "", "links": [], "attempts": attempts,
@@ -112,10 +109,9 @@ def fetch_page(url):
     if r is not None:
         res["url"] = r.url
         soup = BeautifulSoup(r.text, "html.parser")
-        res["links"] = [[urljoin(r.url, a["href"]), a.get_text(" ", strip=True)] for a in soup.find_all("a", href=True)]
+        res["links"] = [[urljoin(r.url, a["href"]), a.get_text(" ", strip=True)] for a in soup.find_all("a", href=True)][:300]
         res["text"], res["site_name"] = extract_text(r.text)
-        with open(cp, "w", encoding="utf-8") as f:
-            json.dump(res, f)
+        S.kv_put("cache", ck, res)
     return res
 
 def fetch_news(domain, brand):
@@ -481,8 +477,7 @@ def research_company(domain, st, usage):
     st.update(status=d["status"], reason=d["reason"], flags=sorted(set(st.get("flags", []) + d["flags"])),
               assessment=a, gates=d["gates"], points=d["points"], total=d["total"],
               sources_used=list(sources), research_limit_hit=budget_hit)
-    with open(os.path.join(S.company_dir(domain), "sources.json"), "w", encoding="utf-8") as f:
-        json.dump(sources, f, indent=1)
+    S.kv_put("sources", domain, sources)
     return (a, sources) if d["status"] == "QUALIFIED" else None
 
 # ====================================================================== Hunter.io (the only contact provider)
@@ -491,10 +486,23 @@ class HunterPaused(Exception):
         super().__init__(msg)
         self.run_wide = run_wide
 
-HUNTER = {"calls": 0, "paused": None, "credits_used": 0.0, "remaining_at_start": None}
+HUNTER = {"calls": 0, "paused": None, "credits_used": 0.0, "remaining_at_start": None, "_loaded": 0, "total_calls": 0}
 
 def hunter_reset():
-    HUNTER.update(calls=0, paused=None, credits_used=0.0, remaining_at_start=None)
+    HUNTER.update(calls=0, paused=None, credits_used=0.0, remaining_at_start=None, _loaded=0, total_calls=0)
+
+def hunter_load(run_id):
+    """Hosted mode: each request is a fresh process, so the per-run counters live in the database."""
+    m = S.kv_get("meta", f"hunter_run_{run_id}") or {}
+    HUNTER.update(calls=m.get("calls", 0), paused=m.get("paused"), credits_used=m.get("credits_used", 0.0),
+                  remaining_at_start=m.get("remaining_at_start"), _loaded=m.get("calls", 0),
+                  total_calls=(S.kv_get("meta", "hunter_total") or {}).get("calls", 0))
+
+def hunter_save(run_id):
+    S.kv_put("meta", f"hunter_run_{run_id}", {k: HUNTER[k] for k in ("calls", "paused", "credits_used", "remaining_at_start")})
+    made = HUNTER["calls"] - HUNTER["_loaded"]
+    if made:
+        S.kv_put("meta", "hunter_total", {"calls": HUNTER["total_calls"] + made})
 
 def hunter_remaining():
     """Free call (Hunter docs: GET /v2/account costs no credits)."""
@@ -508,11 +516,8 @@ def hunter_remaining():
     return None
 
 def hunter_domain_search(domain):
-    os.makedirs(S.CACHE, exist_ok=True)
-    cp = os.path.join(S.CACHE, f"hunter_{domain}.json")
-    if os.path.exists(cp):                                   # every result is cached, including empty ones
-        with open(cp, encoding="utf-8") as f:
-            c = json.load(f)
+    c = S.kv_get("cache", f"hunter_{domain}")
+    if c:                                                    # every result is cached, including empty ones
         c["from_cache"] = True
         return c
     if HUNTER["paused"]:
@@ -521,6 +526,11 @@ def hunter_domain_search(domain):
     if HUNTER["calls"] >= cap:
         HUNTER["paused"] = f"the limit of {cap} Hunter lookups per run was reached"
         raise HunterPaused(HUNTER["paused"], run_wide=True)
+    if S.HOSTED:                                             # public site: a lifetime cap on fresh lookups protects your credits
+        total_cap = int(env("HUNTER_MAX_CALLS_TOTAL", "10"))
+        if HUNTER["total_calls"] + (HUNTER["calls"] - HUNTER["_loaded"]) >= total_cap:
+            HUNTER["paused"] = f"the hosted site's cap of {total_cap} fresh Hunter lookups is used up (raise HUNTER_MAX_CALLS_TOTAL to allow more)"
+            raise HunterPaused(HUNTER["paused"], run_wide=True)
     key = env("HUNTER_API_KEY")
     if not key:
         raise HunterPaused("HUNTER_API_KEY is missing in .env", run_wide=True)
@@ -553,8 +563,7 @@ def hunter_domain_search(domain):
     if r.status_code != 200:
         raise HunterPaused(f"Hunter returned HTTP {r.status_code}")
     c = {"retrieved_at": today(), "credits_used": r.headers.get("X-Credits-Used"), "data": r.json().get("data", {}), "from_cache": False}
-    with open(cp, "w", encoding="utf-8") as f:
-        json.dump({k: v for k, v in c.items() if k != "from_cache"}, f)
+    S.kv_put("cache", f"hunter_{domain}", {k: v for k, v in c.items() if k != "from_cache"})
     return c
 
 ROLE_RULES = [("compliance_grc_leader", r"compliance|grc|governance|risk|privacy|trust"),
@@ -755,7 +764,18 @@ def continue_after_qualified(domain, st, a, sources, usage):
     if draft:
         st.update(status="DRAFT_READY", reason="Draft ready for your review.", draft=draft, original_draft=dict(draft), qa_total=qa_total)
 
-def run_domain(domain):
+def _close(st):
+    """Final bookkeeping once a company has reached its end state."""
+    st["stage"] = "done"
+    st["timing"]["finished_at"] = S.now_iso()
+    st["escalation"] = None if st["status"] in ("DRAFT_READY", "QUALIFIED") else f"{st['reason']} {finish_text(st) or ''}".strip()
+    st["hunter_calls_this_run_so_far"] = HUNTER["calls"]
+    S.write_state(st)
+    log(f"[{st['domain']}] {st['status']} | {st.get('reason', '')}")
+    return st
+
+def start_research(domain):
+    """Step 1: read the website and decide. If the company qualifies it stops at stage 'finding_contact'."""
     t0, usage = time.time(), {}
     old = S.read_state(domain)
     st = {"domain": domain, "run_date": today(), "status": "STARTED", "stage": "reading_website",
@@ -766,36 +786,46 @@ def run_domain(domain):
     try:
         got = research_company(domain, st, usage)
         if got:
-            continue_after_qualified(domain, st, got[0], got[1], usage)
+            st["stage"] = "finding_contact"
     except Exception as e:                    # one company failing must never stop the batch
         st["status"], st["reason"] = "ERROR", f"{type(e).__name__}: {str(e)[:200]}"
-    st["stage"] = "done"
+        st["stage"] = "reading_website"
     st["usage"] = usage
-    st["timing"].update(finished_at=S.now_iso(), seconds=round(time.time() - t0, 1))
-    st["escalation"] = None if st["status"] in ("DRAFT_READY", "QUALIFIED") else f"{st['reason']} {finish_text(st) or ''}".strip()
-    st["hunter_calls_this_run_so_far"] = HUNTER["calls"]
+    st["timing"]["seconds"] = round(time.time() - t0, 1)
+    if st["stage"] == "finding_contact":
+        S.write_state(st)
+        return st
+    return _close(st)
+
+def finish_contact(domain):
+    """Step 2 (qualified companies only): Hunter contact, pain points, email, QA. Also used to retry a paused lookup."""
+    st = S.read_state(domain)
+    if not st or "assessment" not in st or st.get("status") not in ("QUALIFIED", "CONTACT_LOOKUP_PAUSED"):
+        raise ValueError("This company is not waiting for a contact lookup.")
+    t0, usage = time.time(), st.get("usage", {})
+    st.pop("hunter_limit_hit", None)
+    st.update(status="QUALIFIED", stage="finding_contact")
     S.write_state(st)
-    log(f"[{domain}] {st['status']} | {st.get('reason', '')}")
+    try:
+        continue_after_qualified(domain, st, st["assessment"], S.kv_get("sources", domain) or {}, usage)
+    except Exception as e:
+        st["status"], st["reason"] = "ERROR", f"{type(e).__name__}: {str(e)[:200]}"
+    st["usage"] = usage
+    st["timing"]["seconds"] = round(st["timing"].get("seconds", 0) + time.time() - t0, 1)
+    return _close(st)
+
+def run_domain(domain):
+    st = start_research(domain)
+    if st.get("stage") == "finding_contact":
+        st = finish_contact(domain)
     return st
 
 def resume_contact(domain):
-    """Retry the contact step for a company whose lookup was paused. Uses the saved assessment and pages."""
+    """Retry the contact step for a company whose lookup was paused."""
     st = S.read_state(domain)
     if not st or st.get("status") != "CONTACT_LOOKUP_PAUSED":
         return None
-    usage = st.get("usage", {})
-    try:
-        with open(os.path.join(S.company_dir(domain), "sources.json"), encoding="utf-8") as f:
-            sources = json.load(f)
-        st.update(status="QUALIFIED", stage="finding_contact")
-        S.write_state(st)
-        continue_after_qualified(domain, st, st["assessment"], sources, usage)
-    except Exception as e:
-        st["status"], st["reason"] = "ERROR", f"{type(e).__name__}: {str(e)[:200]}"
-    st["stage"], st["usage"] = "done", usage
-    st["escalation"] = None if st["status"] in ("DRAFT_READY", "QUALIFIED") else f"{st['reason']} {finish_text(st) or ''}".strip()
-    S.write_state(st)
-    return st
+    return finish_contact(domain)
 
 def clean_domain(line):
     s = line.strip().lower()
@@ -818,7 +848,8 @@ def run_batch(domains, on_start=None):
         if on_start:
             on_start(d)
         rows.append(run_domain(d))
-    write_summary(rows)
+    if not S.HOSTED:
+        write_summary(rows)
     return rows
 
 def write_summary(rows):

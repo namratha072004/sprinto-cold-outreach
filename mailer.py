@@ -18,6 +18,23 @@ def send_status():
     return {"demo_email_set": bool(demo), "password_set": bool(S.env("GMAIL_APP_PASSWORD")),
             "ready": bool(demo and S.env("GMAIL_APP_PASSWORD")) and not off, "to": demo}
 
+def check_login():
+    """Proves the Gmail login works. Sends nothing."""
+    if os.environ.get("SPRINTO_DISABLE_SEND"):
+        raise MailerNotConfigured("Sending is switched off for this test run.")
+    pw = (S.env("GMAIL_APP_PASSWORD") or "").replace(" ", "")
+    login = S.env("GMAIL_ADDRESS") or S.env("GMAIL_USER") or S.env("DEMO_EMAIL")
+    if not pw or not login:
+        raise MailerNotConfigured("GMAIL_APP_PASSWORD (or the Gmail address) is not set.")
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:
+            s.login(login, pw)
+    except smtplib.SMTPAuthenticationError:
+        raise MailerError("Gmail refused the login. A school Google Workspace account may block app passwords.")
+    except (smtplib.SMTPException, OSError) as e:
+        raise MailerError(f"Could not reach Gmail: {type(e).__name__}")
+    return "Gmail login works. Nothing was sent."
+
 def send_demo(subject, body):
     if os.environ.get("SPRINTO_DISABLE_SEND"):
         raise MailerNotConfigured("Sending is switched off for this test run (SPRINTO_DISABLE_SEND), so nothing was sent.")

@@ -324,3 +324,58 @@ class TestFetchRules(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHostedSteps(Base):
+    """Hosted mode: no background thread, no files. The browser drives research -> contact one request at a time.
+    A dict stands in for the Neon table here; the real SQL is tested against the real database."""
+    def setUp(self):
+        super().setUp()
+        self.db = {}
+        self.ps = [mock.patch.object(S, "HOSTED", True),
+                   mock.patch.object(S, "kv_get", lambda k, key: json.loads(json.dumps(self.db.get((k, key))))),
+                   mock.patch.object(S, "kv_put", lambda k, key, o: self.db.__setitem__((k, key), json.loads(json.dumps(o, default=str)))),
+                   mock.patch.object(S, "kv_list", lambda k: [v for (kk, _), v in sorted(self.db.items()) if kk == k]),
+                   mock.patch.object(P, "http_get", fake_http), mock.patch.object(P, "gemini_json", side_effect=fake_gemini)]
+        fake_r, self.calls = TestHunter._get(TestHunter())
+        self.ps.append(mock.patch.object(P.requests, "get", fake_r))
+        for p in self.ps: p.start()
+        import app as A
+        self.c = A.app.test_client()
+    def tearDown(self):
+        for p in self.ps: p.stop()
+        super().tearDown()
+    def post(self, path, body): return self.c.post(path, json=body)
+    def test_two_step_run_and_counters_survive_requests(self):
+        r = self.post("/api/run", {"domains": "acme.test"}).get_json()
+        rid = r["run_id"]
+        self.assertEqual(self.c.get("/api/companies").get_json()[0]["key"], "QUEUED")
+        s1 = self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"}).get_json()
+        self.assertEqual(s1["stage"], "finding_contact")
+        self.assertEqual(self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"}).status_code, 400)   # not queued any more
+        s2 = self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "contact"}).get_json()
+        self.assertEqual(s2["key"], "DRAFT_READY")
+        self.assertEqual(self.db[("meta", f"hunter_run_{rid}")]["calls"], 1)        # counter saved between requests
+        self.assertEqual(self.db[("meta", "hunter_total")]["calls"], 1)
+        self.assertIn("sources", [k for k, _ in self.db])
+        self.assertEqual(self.c.get("/api/company/acme.test").get_json()["contact"]["name"], "Priya Rao")
+    def test_total_cap_protects_credits_on_public_site(self):
+        self.db[("meta", "hunter_total")] = {"calls": 10}
+        rid = self.post("/api/run", {"domains": "acme.test"}).get_json()["run_id"]
+        self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"})
+        out = self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "contact"}).get_json()
+        self.assertEqual(out["key"], "CONTACT_LOOKUP_PAUSED")
+        self.assertEqual(len([u for u in self.calls if "domain-search" in u]), 0)   # no credit spent
+    def test_json_only_and_approve_flow(self):
+        self.assertEqual(self.c.post("/api/run", data="domains=x").status_code, 415)
+        rid = self.post("/api/run", {"domains": "acme.test"}).get_json()["run_id"]
+        self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"})
+        self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "contact"})
+        d = self.c.get("/api/company/acme.test").get_json()["draft"]
+        smtp = mock.MagicMock(); smtp.__enter__.return_value = smtp
+        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": "pw"}), mock.patch.object(mailer.smtplib, "SMTP_SSL", return_value=smtp):
+            out = self.post("/api/company/acme.test/approve", {"subject": d["subject"], "body": d["body"]}).get_json()
+        self.assertEqual(out["view"]["key"], "SENT"); self.assertEqual(smtp.send_message.call_args[1]["to_addrs"], ["demo@example.test"])
+    def test_interrupted_run_is_labelled(self):
+        self.db[("state", "slow.test")] = {"domain": "slow.test", "status": "STARTED", "stage": "reading_website", "updated_at": "2020-01-01T00:00:00"}
+        self.assertEqual(self.c.get("/api/companies").get_json()[0]["key"], "STALE")

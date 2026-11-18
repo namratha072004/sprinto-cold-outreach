@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Review desk for the Growth Lead. Run:  ./start.sh   (or  .venv/bin/python app.py)  then open http://127.0.0.1:8765
 Reads the saved per-company results in output/<domain>/state.json. Nothing is sent without Approve."""
-import os, re, threading, queue, time
+import os, re, threading, queue, time, uuid
 from flask import Flask, jsonify, request, send_from_directory, abort
 import settings as S
 import pipeline as P
@@ -17,9 +17,9 @@ _HUNTER_CACHE = {"at": 0, "remaining": None}
 # ---------------------------------------------------------------- safety for a local app
 @app.before_request
 def guard():
-    if S.HOSTED:                                         # hosted copy is read-only: nothing can run, change or send
-        if request.method == "POST":
-            return jsonify({"error": "This hosted copy is read-only. Run, edit, approve and send work in the local app (./start.sh)."}), 403
+    if S.HOSTED:                                         # on Vercel the host name is the public site, so only the JSON rule applies
+        if request.method == "POST" and not request.is_json:
+            abort(415)
         return None
     host = (request.host or "").split(":")[0]
     if host not in ("127.0.0.1", "localhost"):          # blocks DNS-rebinding style access
@@ -82,8 +82,7 @@ def company(domain):
     st = S.read_state(valid_domain(domain))
     if not st:
         abort(404)
-    if not S.HOSTED:
-        review.mark_opened(domain)
+    review.mark_opened(domain)
     st = S.read_state(domain)
     st["view"] = review.view_status(st)
     st["finish_text"] = P.finish_text(st)
@@ -92,13 +91,13 @@ def company(domain):
 @app.get("/api/config")
 def config():
     return jsonify({"weights": R.WEIGHTS, "threshold": R.THRESHOLD_TOTAL, "contact_pass": R.CONTACT_PASS_TOTAL,
-                    "words": [80, 120], "mail": ({"ready": False} if S.HOSTED else mailer.send_status()), "hosted": S.HOSTED, "targets": metrics.compute()["targets"]})
+                    "words": [80, 120], "mail": mailer.send_status(), "hosted": S.HOSTED, "targets": metrics.compute()["targets"]})
 
 @app.get("/api/status")
 def status():
-    if not S.HOSTED and time.time() - _HUNTER_CACHE["at"] > 60 and S.env("HUNTER_API_KEY"):        # free account call, cached for a minute
+    if time.time() - _HUNTER_CACHE["at"] > 60 and S.env("HUNTER_API_KEY"):        # free account call, cached for a minute
         _HUNTER_CACHE.update(at=time.time(), remaining=P.hunter_remaining())
-    return jsonify({"run": RUN, "hunter_remaining": _HUNTER_CACHE["remaining"], "mail": ({"ready": False} if S.HOSTED else mailer.send_status()),
+    return jsonify({"run": RUN, "hunter_remaining": _HUNTER_CACHE["remaining"], "mail": mailer.send_status(),
                     "gemini_key_set": bool(S.env("GEMINI_API_KEY")), "hosted": S.HOSTED})
 
 @app.get("/api/metrics")
@@ -127,6 +126,8 @@ def run():
         return jsonify({"existing": existing, "message": "These already have results. Running again replaces them (Hunter results stay cached, so no extra credits)."}), 409
     for d in domains:
         S.write_state({"domain": d, "status": "QUEUED", "stage": "queued", "run_date": S.today()})
+    if S.HOSTED:                                        # no background threads on Vercel: the browser drives each step
+        return jsonify({"queued": domains, "invalid": bad, "run_id": uuid.uuid4().hex})
     RUN["queued"] += domains
     JOBS.put(domains)
     RUN["active"] = True
@@ -173,9 +174,42 @@ def contact_feedback(domain):
     d = request.get_json(silent=True) or {}
     return act(review.contact_feedback, valid_domain(domain), bool(d.get("correct")))
 
+@app.post("/api/step")
+def step():
+    """Hosted mode: run ONE step of ONE company so each request fits Vercel's time limit.
+    research = read website + decide. contact = Hunter + pain points + email. resume = retry a paused contact lookup."""
+    d = request.get_json(silent=True) or {}
+    domain, which, run_id = valid_domain(d.get("domain")), d.get("step"), re.sub(r"[^a-z0-9]", "", str(d.get("run_id", "")))[:40]
+    if not run_id or which not in ("research", "contact", "resume"):
+        return jsonify({"error": "step needs domain, run_id and step (research, contact or resume)."}), 400
+    st = S.read_state(domain)
+    ok = st and ((which == "research" and st.get("status") == "QUEUED") or
+                 (which == "contact" and st.get("stage") == "finding_contact") or
+                 (which == "resume" and st.get("status") == "CONTACT_LOOKUP_PAUSED"))
+    if not ok:
+        return jsonify({"error": f"{domain} is not ready for step '{which}'."}), 400
+    if not S.env("GEMINI_API_KEY"):
+        return jsonify({"error": "GEMINI_API_KEY is not set."}), 400
+    P.hunter_load(run_id)
+    try:
+        out = P.start_research(domain) if which == "research" else P.finish_contact(domain)
+    finally:
+        P.hunter_save(run_id)
+    return jsonify(summary(out) | {"stage": out.get("stage")})
+
+@app.post("/api/mail-check")
+def mail_check():
+    """Logs in to Gmail to prove the credentials work. Sends nothing."""
+    try:
+        return jsonify({"ok": True, "message": mailer.check_login()})
+    except (mailer.MailerNotConfigured, mailer.MailerError) as e:
+        return jsonify({"ok": False, "message": str(e)})
+
 @app.post("/api/company/<domain>/resume")
 def resume(domain):
     valid_domain(domain)
+    if S.HOSTED:
+        return jsonify({"error": "Use /api/step on the hosted site."}), 400
     st = S.read_state(domain)
     if not st or st.get("status") != "CONTACT_LOOKUP_PAUSED":
         return jsonify({"error": "Only a paused contact lookup can be retried."}), 400

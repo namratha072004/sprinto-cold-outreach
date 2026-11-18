@@ -30,9 +30,17 @@ def view_status(st):
         if rv.get("send_status") == "SENT":
             return {"label": "Approved and sent to the demo address", "tone": "success", "key": "SENT"}
         return {"label": "Approved, not sent yet", "tone": "warning", "key": "APPROVED_NOT_SENT"}
+    try:
+        age = (dt.datetime.now() - dt.datetime.fromisoformat(st["updated_at"])).total_seconds()
+    except (KeyError, ValueError):
+        age = 0
     if st.get("status") == "QUEUED":
+        if age > 1800:
+            return {"label": "Never started: run it again", "tone": "warning", "key": "STALE"}
         return {"label": "Waiting to start", "tone": "neutral", "key": "QUEUED"}
     if st.get("status") == "STARTED" or st.get("stage") not in (None, "done"):
+        if age > 600:                                           # nothing saved for 10 minutes: the run was cut off
+            return {"label": "Run was interrupted: run it again", "tone": "danger", "key": "STALE"}
         return {"label": STAGE_LABEL.get(st.get("stage"), "Working"), "tone": "neutral", "key": "WORKING"}
     label, tone = STATUS_VIEW.get(st.get("status"), (st.get("status", "Unknown"), "neutral"))
     return {"label": label, "tone": tone, "key": st.get("status")}

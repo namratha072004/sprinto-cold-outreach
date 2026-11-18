@@ -21,12 +21,7 @@ async function api(path, body) {
 async function refreshStatus() {
   const { data } = await api("/api/status");
   if (!data) return;
-  if (data.hosted) {
-    $("#pill-hunter").hidden = true;
-    const m = $("#pill-mail"); m.textContent = "Read-only copy: saved results from a real local run"; m.className = "pill";
-    $(".add").innerHTML = `<div class="muted small"><b>Hosted, read-only.</b> These are real saved results (prospect emails masked). Running new companies, editing, approving and sending only work in the local app: <code>./start.sh</code>.</div>`;
-    return;
-  }
+  if (data.hosted) $("#btn-file").hidden = true;
   const h = $("#pill-hunter");
   h.textContent = data.hunter_remaining == null ? "Hunter credits: unknown" : `Hunter credits left: ${data.hunter_remaining}`;
   h.className = "pill" + (data.hunter_remaining != null && data.hunter_remaining < 5 ? " warning" : "");
@@ -35,6 +30,7 @@ async function refreshStatus() {
   else if (data.mail.ready) { m.textContent = "Gmail ready: sends only to the demo address"; m.className = "pill success"; }
   else { m.textContent = "Gmail not set up: approvals are saved, not sent"; m.className = "pill warning"; }
   const r = data.run;
+  if (DRIVING) return;
   $("#runline").textContent = r.active ? `Working on ${r.current || "…"}${r.queued.length ? ` · ${r.queued.length} waiting` : ""}` : "";
 }
 
@@ -96,7 +92,7 @@ function render(st) {
     const fb = rv.contact_correct;
     h += `<div class="card"><h3>Why this person</h3><div class="who"><div>${esc(c.why)}
       <div class="muted small">Contact email found by Hunter (research only, never emailed): ${esc(c.email)}${c.email_verified ? " · Hunter marks it valid" : ""}</div></div>
-      <div class="small" ${CFG.hosted ? "hidden" : ""}>Right person? <button class="btn small" data-fb="1" ${fb === true ? "disabled" : ""}>Yes</button> <button class="btn small" data-fb="0" ${fb === false ? "disabled" : ""}>No</button></div></div></div>`;
+      <div class="small">Right person? <button class="btn small" data-fb="1" ${fb === true ? "disabled" : ""}>Yes</button> <button class="btn small" data-fb="0" ${fb === false ? "disabled" : ""}>No</button></div></div></div>`;
   }
 
   if (a) h += trail(st);
@@ -160,9 +156,6 @@ function trail(st) {
 // ------------------------------------------------------------------ draft, decision
 function draftPanel(st) {
   const d = st.draft, m = CFG.mail || {};
-  if (CFG.hosted) return `<div class="card draft" id="draft"><h3>Draft email (awaiting review)</h3>
-    <label>Subject</label><input type="text" value="${esc(d.subject)}" readonly><label>Email</label><textarea readonly>${esc(d.body)}</textarea>
-    <div class="muted small" style="margin-top:8px">Read-only hosted copy: Approve, Edit and Reject are disabled. Nothing was sent. Use the local app to review and send.</div></div>`;
   return `<div class="card draft" id="draft"><h3>Draft email</h3>
     <label for="subj">Subject</label><input type="text" id="subj" value="${esc(d.subject)}" readonly>
     <label for="body">Email</label><textarea id="body" readonly>${esc(d.body)}</textarea>
@@ -176,7 +169,7 @@ function resultPanel(st) {
   const rv = st.review;
   if (rv.decision === "rejected") return `<div class="card"><h3>Rejected</h3>You rejected this draft${rv.reject_reason ? ": " + esc(rv.reject_reason) : ""}.<div class="muted small">Nothing was sent.</div></div>`;
   const sent = rv.send_status === "SENT";
-  return `<div class="card"><h3>${sent ? "Sent to the demo address" : "Approved, not sent"}</h3>${sent ? `Sent ${esc(rv.sent_at || "")}. Only the demo address received it.` : esc(rv.send_error || "Not sent yet.")}
+  return `<div class="card"><h3>${sent ? "Sent to the demo address" : "Approved, not sent"}</h3>${sent ? `Sent ${esc(rv.sent_at || "")}. Only the demo address received it. ${link("https://mail.google.com/mail/u/0/#search/%5BDEMO%5D", "Open Gmail")}` : esc(rv.send_error || "Not sent yet.")}
     ${rv.edited ? `<div class="muted small">You edited the draft before approving (kept ${Math.round((rv.edit_similarity || 0) * 100)}% of the original).</div>` : ""}
     ${sent ? "" : `<div class="actions"><button class="btn primary" id="btn-retry">Try sending again</button></div>`}
     <label class="small muted">Approved text</label><blockquote><b>${esc(rv.final_subject)}</b><br>${esc(rv.final_body).replace(/\n/g, "<br>")}</blockquote></div>`;
@@ -187,7 +180,9 @@ function wordCount(t) { return (t.trim().match(/\S+/g) || []).length; }
 function wire(st) {
   const fb = document.querySelectorAll("[data-fb]");
   fb.forEach(b => b.onclick = async () => { await api(`/api/company/${st.domain}/contact-feedback`, { correct: b.dataset.fb === "1" }); await showDetail(true); });
-  const rs = $("#btn-resume"); if (rs) rs.onclick = async () => { const r = await api(`/api/company/${st.domain}/resume`, {}); if (!r.ok) alert(r.data.error); };
+  const rs = $("#btn-resume"); if (rs) rs.onclick = async () => {
+    if (CFG.hosted) { rs.disabled = true; return drive([{ domain: st.domain, step: "resume" }], newRunId()); }
+    const r = await api(`/api/company/${st.domain}/resume`, {}); if (!r.ok) alert(r.data.error); };
   const rt = $("#btn-retry"); if (rt) rt.onclick = async () => { rt.disabled = true; await api(`/api/company/${st.domain}/retry-send`, {}); await showDetail(true); refreshList(); };
   const dr = $("#draft"); if (!dr) return;
   const subj = $("#subj"), body = $("#body"), wc = $("#wc");
@@ -212,6 +207,23 @@ async function run(fromFile, rerun) {
   if (!r.ok && r.status !== 409) $("#runline").textContent = r.data.error || "Could not start";
   else if (r.ok) { $("#domains").value = ""; if (r.data.invalid.length) $("#runline").textContent = "Skipped (not domains): " + r.data.invalid.join(", "); }
   refreshStatus(); refreshList();
+  if (r.ok && CFG.hosted) drive(r.data.queued.map(d => ({ domain: d, step: "research" })), r.data.run_id);
+}
+
+// Hosted site: the browser walks the companies one at a time, one short request per step (each fits Vercel's time limit).
+let DRIVING = false;
+const newRunId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+async function drive(jobs, runId) {
+  DRIVING = true;
+  for (const j of jobs) {
+    $("#runline").textContent = `Working on ${j.domain}… (about 1–3 minutes; you can keep reviewing other companies)`;
+    let r = await api("/api/step", { domain: j.domain, run_id: runId, step: j.step });
+    if (r.ok && r.data.stage === "finding_contact") r = await api("/api/step", { domain: j.domain, run_id: runId, step: "contact" });
+    if (!r.ok) $("#runline").textContent = `${j.domain}: ${(r.data && r.data.error) || "the step timed out; run it again"}`;
+    await refreshList();
+    if (selected === j.domain) await showDetail(true);
+  }
+  DRIVING = false; refreshStatus();
 }
 
 async function scorecard() {
@@ -239,6 +251,8 @@ async function scorecard() {
 }
 
 // ------------------------------------------------------------------ start
+$("#pill-mail").onclick = async () => { const r = await api("/api/mail-check", {}); alert(r.data ? r.data.message : "Could not check Gmail."); };
+$("#pill-mail").style.cursor = "pointer"; $("#pill-mail").title = "Click to test the Gmail login (sends nothing)";
 $("#btn-run").onclick = () => run(false);
 $("#btn-file").onclick = () => run(true);
 $("#btn-score").onclick = scorecard;
