@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review desk</title>
+  <link rel="stylesheet" href="/static/theme.css">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Review desk</h1>
+    <span class="muted small">Nothing is sent until you approve it.</span>
+    <span class="spacer"></span>
+    <span id="pill-hunter" class="pill"></span>
+    <span id="pill-mail" class="pill"></span>
+    <button class="btn small" id="btn-score">Scorecard</button>
+  </header>
+  <main class="desk">
+    <aside class="left">
+      <div class="add">
+        <textarea id="domains" placeholder="Paste company domains, one per line (acme.com)" aria-label="Company domains"></textarea>
+        <div class="row">
+          <button class="btn primary" id="btn-run">Run</button>
+          <button class="btn" id="btn-file">Load domains.txt</button>
+        </div>
+        <div class="runline" id="runline"></div>
+      </div>
+      <div class="list" id="list" role="list"></div>
+    </aside>
+    <section class="right" id="detail"></section>
+  </main>
+  <dialog id="score-dialog"></dialog>
+  <script src="/static/app.js"></script>
+</body>
+</html>
