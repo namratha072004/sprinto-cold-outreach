@@ -69,9 +69,9 @@ def edit(cid, subject, body):
     db.x("UPDATE emails SET subject=%s, body=%s, words=%s WHERE id=%s", (subject, body, len(body.split()), e["id"]))
     _record(cid, "edited")
     try:
-        draft_id, verb = gmail_drafts.create_or_replace(subject, body, e["gmail_draft_id"])
-        db.x("UPDATE emails SET gmail_draft_id=%s, gmail_draft_error=NULL, draft_updated_at=now(), "
-             "draft_created_at=COALESCE(draft_created_at, now()) WHERE id=%s", (draft_id, e["id"]))
+        draft_id, verb, msg_id = gmail_drafts.create_or_replace(subject, body, e["gmail_draft_id"])
+        db.x("UPDATE emails SET gmail_draft_id=%s, gmail_message_id=%s, gmail_draft_error=NULL, draft_updated_at=now(), "
+             "draft_created_at=COALESCE(draft_created_at, now()) WHERE id=%s", (draft_id, msg_id, e["id"]))
         return None
     except (gmail_drafts.GmailSetupError, gmail_drafts.GmailError) as err:
         db.x("UPDATE emails SET gmail_draft_error=%s WHERE id=%s", (str(err)[:400], e["id"]))
@@ -85,3 +85,33 @@ def contact_feedback(cid, correct):
 
 def similarity(a, b):
     return difflib.SequenceMatcher(None, a or "", b or "").ratio()
+
+# ---------------------------------------------------------------- more record-only actions
+def mark_done(cid):
+    """She sent it from Gmail herself (or is finished with it). Only records that; the software sends nothing."""
+    _record(cid, "done")
+
+def restore_in_gmail(cid):
+    """If she deleted the Gmail draft by accident, this puts it back (same text). If it is still there, it is just refreshed."""
+    e = _current(cid)
+    if not e:
+        raise ValueError("This company has no draft.")
+    draft_id, verb, msg_id = gmail_drafts.create_or_replace(e["subject"], e["body"], e["gmail_draft_id"])
+    db.x("UPDATE emails SET gmail_draft_id=%s, gmail_message_id=%s, gmail_draft_error=NULL, draft_updated_at=now(), draft_created_at=COALESCE(draft_created_at, now()) WHERE id=%s",
+         (draft_id, msg_id, e["id"]))
+    return "Created again in Gmail Drafts." if verb == "created" else "It is already in Gmail (refreshed to match this page)."
+
+def overrule(cid, note=""):
+    """The Growth Lead disagrees with a no-go. Moves the company on to the contact step. Recorded as her decision, with her note."""
+    co = db.one("SELECT * FROM companies WHERE id=%s", (cid,))
+    if not co:
+        raise ValueError("No such company.")
+    if co["sources_text"] is None or co["assessment"] is None:
+        raise ValueError("This company was never researched (its website was not confirmed), so there is nothing to overrule.")
+    if co["status"] in ("DRAFT_READY", "QUALIFIED") or co["overruled"]:
+        raise ValueError("This company is already in the review queue.")
+    note = (note or "").strip()[:300]
+    db.x("UPDATE companies SET overruled=true, overrule_note=%s, status='QUALIFIED', stage='finding_contact', claimed_at=NULL, "
+         "flags=array_append(flags,'overruled_by_growth_lead'), reason=%s, escalation_reason=NULL, updated_at=now() WHERE id=%s",
+         (note, "Overruled by the Growth Lead" + (": " + note if note else "") + ". Contact step next.", cid))
+    research.log(co["run_id"], cid, "overruled", {"was": co["status"], "note": note})

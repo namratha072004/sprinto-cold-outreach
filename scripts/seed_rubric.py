@@ -9,7 +9,7 @@ import psycopg2, psycopg2.extras
 import settings as S
 import rubric as R
 
-VERSION = "v3-2026-11-19"
+VERSION = "v4-2026-11-19"
 SOURCE = "Sprinto_Agent_Complete_Rubric.pdf (sections 2-7, 11) + slides 02/03 + rubric.py. Proposed project rules, not Sprinto's official ICP."
 
 # ---- 3. Company qualification (PDF section 3 table) ----
@@ -71,6 +71,7 @@ LIMITS = {
  "max_chars_per_source": R.MAX_CHARS_PER_SOURCE,   # CODE
  "hunter_calls_per_run": int(S.env("HUNTER_MAX_CALLS_PER_RUN", "5")),   # .env: the Growth Lead's own cap
  "hunter_candidates_per_lookup": 10,      # CODE: Hunter free plan allows limit<=10
+ "shortlist_size": 15,                    # Growth Lead's OK, 19 Nov 2026 (the case: 8-15 companies a week)
 }
 CAPABILITIES = ["compliance preparation", "evidence collection", "continuous control monitoring", "customer trust documentation"]   # PDF s6
 
@@ -130,6 +131,15 @@ RULES = {
    "invalid_input": "do not retry unchanged",
    "hunter_quota_exhausted": "pause affected lookups; record the reason",
    "one_company_fails": "must not stop the run"},
+ # Shortlist rules (Growth Lead approved "top 15"; the signal words and points are my proposal and are editable in Settings)
+ ("shortlist", "policy"): {
+   "in_scope_stage_patterns": [r"series a\b", r"series b\b", r"series c\b"],                       # ICP gate: Series A-C
+   "outside_stage_patterns": [r"\bpre-?seed\b", r"\bseed\b", r"series [d-z]\b", r"\bipo\b", r"\bpre-ipo\b"],  # confirmed outside A-C: dropped before research
+   "stage_points": 3, "signal_points_each": 1, "signal_points_max": 3,
+   "signal_keywords": ["saas", "software", "platform", "security", "compliance", "enterprise", "cloud", "b2b", "api", "data"],
+   "max_age_months": 12},
+ ("shortlist", "website_lookup"): {"method": "suggest_and_verify",
+   "meaning": "Gemini suggests a website from its own knowledge (no Google Search). Code accepts it only if the homepage is readable, names the company, and an AI check quotes a line from the page (verified word for word by code) showing it is the same company as the headline."},
  # PROPOSED (not in the PDF): search-query templates for discovery. Waiting for the Growth Lead's OK before any discovery code uses them.
  ("search", "query_templates_PROPOSED"): [
    '"Series A" OR "Series B" OR "Series C" SaaS raises funding {year}',
@@ -160,6 +170,31 @@ def crosscheck():
     chk("capabilities", CAPABILITIES, R.APPROVED_CAPABILITIES)
     return out
 
+def insert_rubric(cur, version=None):
+    version = version or VERSION
+    cur.execute("UPDATE rubric_versions SET is_active=false WHERE is_active")
+    cur.execute("INSERT INTO rubric_versions (version, source, is_active, notes) VALUES (%s,%s,true,%s) RETURNING id",
+                (version, SOURCE, LEVEL0_NOTE))
+    vid = cur.fetchone()[0]
+    for i, (key, label, weight, levels) in enumerate(DIMENSIONS):
+        cur.execute("INSERT INTO rubric_dimensions (rubric_version_id,key,label,weight,max_level,sort_order) VALUES (%s,%s,%s,%s,2,%s) RETURNING id",
+                    (vid, key, label, weight, i))
+        did = cur.fetchone()[0]
+        for lvl, text in levels.items():
+            cur.execute("INSERT INTO rubric_levels (dimension_id,level,description) VALUES (%s,%s,%s)", (did, lvl, text))
+    for i, (key, label, kind, params) in enumerate(GATES):
+        cur.execute("INSERT INTO rubric_gates (rubric_version_id,key,label,kind,params,sort_order) VALUES (%s,%s,%s,%s,%s,%s)",
+                    (vid, key, label, kind, json.dumps(params), i))
+    for k, v in THRESHOLDS.items():
+        cur.execute("INSERT INTO rubric_thresholds VALUES (%s,%s,%s)", (vid, k, v))
+    for k, v in LIMITS.items():
+        cur.execute("INSERT INTO rubric_limits VALUES (%s,%s,%s)", (vid, k, v))
+    for c in CAPABILITIES:
+        cur.execute("INSERT INTO rubric_capabilities VALUES (%s,%s)", (vid, c))
+    for (area, key), val in RULES.items():
+        cur.execute("INSERT INTO rubric_rules VALUES (%s,%s,%s,%s)", (vid, area, key, json.dumps(val)))
+    return vid
+
 def main():
     url = S.env("DATABASE_URL")
     if not url:
@@ -183,27 +218,7 @@ def main():
         if cur.fetchone()[0]:
             sys.exit(f"Version {VERSION} is already used by a run. Change VERSION to seed a new one.")
         cur.execute("DELETE FROM rubric_versions WHERE id=%s", (row[0],))
-    cur.execute("UPDATE rubric_versions SET is_active=false WHERE is_active")
-    cur.execute("INSERT INTO rubric_versions (version, source, is_active, notes) VALUES (%s,%s,true,%s) RETURNING id",
-                (VERSION, SOURCE, LEVEL0_NOTE))
-    vid = cur.fetchone()[0]
-    for i, (key, label, weight, levels) in enumerate(DIMENSIONS):
-        cur.execute("INSERT INTO rubric_dimensions (rubric_version_id,key,label,weight,max_level,sort_order) VALUES (%s,%s,%s,%s,2,%s) RETURNING id",
-                    (vid, key, label, weight, i))
-        did = cur.fetchone()[0]
-        for lvl, text in levels.items():
-            cur.execute("INSERT INTO rubric_levels (dimension_id,level,description) VALUES (%s,%s,%s)", (did, lvl, text))
-    for i, (key, label, kind, params) in enumerate(GATES):
-        cur.execute("INSERT INTO rubric_gates (rubric_version_id,key,label,kind,params,sort_order) VALUES (%s,%s,%s,%s,%s,%s)",
-                    (vid, key, label, kind, json.dumps(params), i))
-    for k, v in THRESHOLDS.items():
-        cur.execute("INSERT INTO rubric_thresholds VALUES (%s,%s,%s)", (vid, k, v))
-    for k, v in LIMITS.items():
-        cur.execute("INSERT INTO rubric_limits VALUES (%s,%s,%s)", (vid, k, v))
-    for c in CAPABILITIES:
-        cur.execute("INSERT INTO rubric_capabilities VALUES (%s,%s)", (vid, c))
-    for (area, key), val in RULES.items():
-        cur.execute("INSERT INTO rubric_rules VALUES (%s,%s,%s,%s)", (vid, area, key, json.dumps(val)))
+    vid = insert_rubric(cur)
     conn.commit()
 
     print(f"\n== seeded rubric {VERSION} (id {vid}, active). Reading it back from Neon:")

@@ -51,18 +51,18 @@ def _call(method, url, body):
     return r
 
 def create_or_replace(subject, body, existing_id=None):
-    """Returns (draft_id, 'created' | 'replaced'). Replaces in place when a draft id is known, so editing never duplicates."""
+    """Returns (draft_id, 'created' | 'replaced', message_id). Replaces in place when a draft id is known, so editing never duplicates."""
     payload = {"message": {"raw": _raw(subject, body)}}
     if existing_id:
         r = _call("PUT", f"{API}/{existing_id}", payload)
         if r.status_code == 200:
-            return r.json()["id"], "replaced"
+            return r.json()["id"], "replaced", (r.json().get("message") or {}).get("id")
         if r.status_code != 404:                     # 404 = she deleted it in Gmail: make a fresh one below
             _fail(r)
     r = _call("POST", API, payload)
     if r.status_code != 200:
         _fail(r)
-    return r.json()["id"], "created"
+    return r.json()["id"], "created", (r.json().get("message") or {}).get("id")
 
 def _fail(r):
     try:

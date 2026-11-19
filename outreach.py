@@ -90,10 +90,10 @@ def finish_company(run_id, domain):
         chosen_id = None
         for s in scored:
             c = cands[s["index"]]
-            row = db.one("INSERT INTO contacts (company_id,name,position,department,seniority,hunter_confidence,email,role_category,scores,total,passed,chosen,reasoning,hunter_sources) "
-                         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+            row = db.one("INSERT INTO contacts (company_id,name,position,department,seniority,hunter_confidence,email,role_category,scores,total,passed,chosen,reasoning,hunter_sources,email_verification) "
+                         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
                          (cid, c["name"], c.get("position"), c.get("department"), c.get("seniority"), c.get("confidence"), c.get("email"), s["role_category"],
-                          db.J(s["scores"]), s["total"], s["pass"], bool(chosen and chosen["index"] == s["index"]), s["reasoning"], db.J(c.get("source_links"))))
+                          db.J(s["scores"]), s["total"], s["pass"], bool(chosen and chosen["index"] == s["index"]), s["reasoning"], db.J(c.get("source_links")), c.get("verification") or "unknown"))
             if chosen and chosen["index"] == s["index"]:
                 chosen_id = row["id"]
         research.log(run_id, cid, "contacts_scored", {"candidates": len(scored), "passing": len([s for s in scored if s["pass"]])})
@@ -134,9 +134,9 @@ def finish_company(run_id, domain):
 
         # deliver to Gmail Drafts at the same moment it is saved for the dashboard
         try:
-            draft_id, verb = gmail_drafts.create_or_replace(draft["subject"], draft["body"], prev["gmail_draft_id"] if prev else None)
+            draft_id, verb, msg_id = gmail_drafts.create_or_replace(draft["subject"], draft["body"], prev["gmail_draft_id"] if prev else None)
             created = prev["draft_created_at"] if (verb == "replaced" and prev) else dt.datetime.now(dt.timezone.utc)
-            db.x("UPDATE emails SET gmail_draft_id=%s, draft_created_at=%s, draft_updated_at=now() WHERE id=%s", (draft_id, created, email_id))
+            db.x("UPDATE emails SET gmail_draft_id=%s, gmail_message_id=%s, draft_created_at=%s, draft_updated_at=now() WHERE id=%s", (draft_id, msg_id, created, email_id))
             research.log(run_id, cid, "gmail_draft", {"draft_id": draft_id, "action": verb})
         except (gmail_drafts.GmailSetupError, gmail_drafts.GmailError) as e:
             gmail_note = str(e)[:400]

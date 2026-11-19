@@ -10,6 +10,7 @@ def main(domain):
     if row["status"] == "QUALIFIED":
         row = outreach.finish_company(rid, domain)
         print(f"[2/2] contact + email + Gmail draft: {row['status']} | total {row['seconds']}s | {row['reason']}")
+    research.close_run_if_done(rid)
     return rid, row
 
 if __name__ == "__main__":

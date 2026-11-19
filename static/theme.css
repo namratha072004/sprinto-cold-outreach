@@ -1,21 +1,36 @@
-/* THEME: every colour in the app lives here. Change a value and the whole app follows.
-   Status colours are not decided yet, so these are neutral placeholders with four meanings:
-   success = done / sent     warning = needs you      danger = failed / rejected     neutral = informational */
-:root {
-  /* surfaces and text */
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --surface-2: #f9fafb;
-  --border: #dfe2e7;
-  --text: #1f2933;
-  --text-muted: #5f6b7a;
-  --accent: #2f4858;            /* primary button, selected row marker */
-  --accent-contrast: #ffffff;
-  --focus: #2f6fed;
+/* THEME: every colour in the app lives in this file. Pick a palette and a mode from the top bar, or edit the values below.
+   Status colours keep four meanings in every palette: success = done / safe, warning = needs you, danger = failed / stop, neutral = information.
+   Palettes only change the accent; light and dark change the surfaces and the status colours. */
 
-  /* semantic status colours: foreground, background, border */
-  --success-fg: #1e6b3a;  --success-bg: #e6f4ea;  --success-border: #b7dcc2;
-  --warning-fg: #8a5300;  --warning-bg: #fff4de;  --warning-border: #f0d49a;
-  --danger-fg:  #a12622;  --danger-bg:  #fdeceb;  --danger-border:  #f2b8b5;
-  --neutral-fg: #4b5563;  --neutral-bg: #eceff3;  --neutral-border: #d3d8df;
+:root, [data-mode="light"] {
+  --bg: #f6f7fb;  --surface: #ffffff;  --surface-2: #f1f3f9;  --border: #e2e6f0;  --border-strong: #cdd3e3;
+  --text: #171a29;  --text-muted: #5d6479;  --accent-contrast: #ffffff;  --shadow: 0 1px 2px rgba(20,24,50,.06), 0 8px 24px rgba(20,24,50,.06);
+  --success-fg: #12683a;  --success-bg: #e4f6ec;  --success-border: #a9dcc0;
+  --warning-fg: #8a5200;  --warning-bg: #fff3dc;  --warning-border: #efd08d;
+  --danger-fg:  #a3231f;  --danger-bg:  #fdeceb;  --danger-border:  #f0b5b2;
+  --neutral-fg: #485066;  --neutral-bg: #eceff6;  --neutral-border: #d3d9e8;
+  --glow-1: rgba(124,92,255,.16); --glow-2: rgba(59,130,246,.12);
 }
+[data-mode="dark"] {
+  --bg: #0b0c14;  --surface: #131522;  --surface-2: #1a1d2e;  --border: #262a3f;  --border-strong: #353a55;
+  --text: #eceef8;  --text-muted: #9aa1bb;  --accent-contrast: #0b0c14;  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  --success-fg: #6fe0a4;  --success-bg: #12301f;  --success-border: #1f5a3a;
+  --warning-fg: #f3c56a;  --warning-bg: #33270d;  --warning-border: #5e4818;
+  --danger-fg:  #ff8f8a;  --danger-bg:  #3a1517;  --danger-border:  #6b2a2d;
+  --neutral-fg: #b3bad2;  --neutral-bg: #1f2336;  --neutral-border: #2e3450;
+  --glow-1: rgba(124,92,255,.22); --glow-2: rgba(59,130,246,.16);
+}
+
+/* palettes: accent, accent 2 (for the gradient) */
+:root, [data-palette="aurora"]     { --accent: #6d5bf0; --accent-2: #4f8dff; --focus: #6d5bf0; }
+[data-palette="green"]             { --accent: #19935a; --accent-2: #36b37e; --focus: #19935a; }
+[data-palette="slate"]             { --accent: #3d5a80; --accent-2: #5b84b1; --focus: #3d5a80; }
+[data-palette="indigo"]            { --accent: #4338ca; --accent-2: #6366f1; --focus: #4338ca; }
+[data-palette="terracotta"]        { --accent: #c2603a; --accent-2: #e08a5c; --focus: #c2603a; }
+[data-palette="plum"]              { --accent: #8e3b8f; --accent-2: #c05fa8; --focus: #8e3b8f; }
+[data-mode="dark"][data-palette="aurora"]     { --accent: #9b8cff; --accent-2: #7aa7ff; }
+[data-mode="dark"][data-palette="green"]      { --accent: #4fd39a; --accent-2: #86e8bd; }
+[data-mode="dark"][data-palette="slate"]      { --accent: #8fb1dc; --accent-2: #b6cdea; }
+[data-mode="dark"][data-palette="indigo"]     { --accent: #8b87ff; --accent-2: #a5b4fc; }
+[data-mode="dark"][data-palette="terracotta"] { --accent: #f09a70; --accent-2: #f7b896; }
+[data-mode="dark"][data-palette="plum"]       { --accent: #d78bd8; --accent-2: #eea8d9; }

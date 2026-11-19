@@ -45,7 +45,7 @@ class Desk(unittest.TestCase):
         self.eid = db.one("INSERT INTO emails (company_id,revision,subject,body,words,qa,qa_total,passed,is_current,original_subject,original_body,gmail_draft_id) "
                           "VALUES (%s,0,'Subject A','Hi Priya, original body. Is that useful?',7,%s,10,true,true,'Subject A','Hi Priya, original body. Is that useful?','draft-1') RETURNING id",
                           (self.cid, db.J({"scores": {}, "mandatory": {}, "code_problems": [], "feedback": ""})))["id"]
-        self.gm = mock.patch("review.gmail_drafts.create_or_replace", return_value=("draft-1", "replaced")); self.gmock = self.gm.start()
+        self.gm = mock.patch("review.gmail_drafts.create_or_replace", return_value=("draft-1", "replaced", "msg-1")); self.gmock = self.gm.start()
     def tearDown(self): self.gm.stop()
     def company(self, rid, domain, status, stage, age=None):
         return self.db.one("INSERT INTO companies (run_id,domain,name,status,stage,total_score,gates,flags,sources_used) VALUES (%s,%s,'Acme',%s,%s,80,%s,'{}',%s) RETURNING id",
@@ -54,8 +54,8 @@ class Desk(unittest.TestCase):
     def decision(self): return self.db.one("SELECT * FROM emails WHERE id=%s", (self.eid,))
 
     def test_list_and_detail_show_real_rows(self):
-        row = self.client.get("/api/companies").get_json()[0]
-        self.assertEqual((row["status"], row["needs_review"], row["score"]), ("Draft ready for your review", True, 80))
+        row = self.client.get("/api/drafts?tab=review").get_json()["items"][0]
+        self.assertEqual((row["name"], row["decision"], row["score"]), ("Acme", "pending", 80))
         d = self.client.get(f"/api/company/{self.cid}").get_json()
         self.assertEqual((d["email"]["subject"], d["contacts"][0]["name"], d["email"]["gmail_draft_id"]), ("Subject A", "Priya Rao", "draft-1"))
         self.assertIsNotNone(self.decision()["opened_at"])                      # the review clock started
@@ -95,8 +95,7 @@ class Desk(unittest.TestCase):
         rid = self.db.one("SELECT run_id FROM companies WHERE id=%s", (self.cid,))["run_id"]
         cid2 = self.company(rid, "slow.test", "WORKING", "reading_website")
         self.db.x("UPDATE companies SET updated_at = now() - interval '20 minutes' WHERE id=%s", (cid2,))
-        rows = {r["domain"]: r for r in self.client.get("/api/companies").get_json()}
-        self.assertEqual(rows["slow.test"]["key"], "STALE")
+        self.assertEqual(self.client.get(f"/api/company/{cid2}").get_json()["view"]["key"], "STALE")
     def test_post_without_json_is_refused(self):
         self.assertEqual(self.client.post(f"/api/company/{self.cid}/approve", data="x").status_code, 415)
     def test_the_app_has_no_send_route(self):

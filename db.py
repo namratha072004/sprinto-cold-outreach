@@ -4,7 +4,13 @@ import json, os, re
 import psycopg2, psycopg2.extras
 import settings as S
 
-_C = {"conn": None}
+import threading
+_T = threading.local()
+class _Slot:
+    """_C["conn"] keeps working for tests, but each thread gets its own connection."""
+    def __getitem__(self, k): return getattr(_T, "conn", None)
+    def __setitem__(self, k, v): _T.conn = v
+_C = _Slot()
 
 def conn():
     c = _C["conn"]
@@ -50,3 +56,19 @@ def x(sql, params=()):
 def J(obj):
     """Wrap a Python value for a jsonb column."""
     return psycopg2.extras.Json(obj, dumps=lambda o: json.dumps(o, default=str))
+
+import contextlib
+
+@contextlib.contextmanager
+def transaction():
+    """All-or-nothing block on this thread's connection."""
+    c = conn()
+    c.autocommit = False
+    try:
+        yield c.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        c.commit()
+    except Exception:
+        c.rollback()
+        raise
+    finally:
+        c.autocommit = True

@@ -18,15 +18,15 @@ class TestDrafts(unittest.TestCase):
         return mock.patch.object(G.requests, "request", side_effect=list(responses))
     def test_creates_when_no_draft_exists(self):
         with self.calls(Resp(200, {"id": "d1"})) as r:
-            self.assertEqual(G.create_or_replace("S", "B"), ("d1", "created"))
+            self.assertEqual(G.create_or_replace("S", "B")[:2], ("d1", "created"))
         self.assertEqual(r.call_args[0][0], "POST")
     def test_edits_replace_the_same_draft(self):
         with self.calls(Resp(200, {"id": "d1"})) as r:
-            self.assertEqual(G.create_or_replace("S2", "B2", "d1"), ("d1", "replaced"))
+            self.assertEqual(G.create_or_replace("S2", "B2", "d1")[:2], ("d1", "replaced"))
         self.assertEqual((r.call_args[0][0], r.call_args[0][1].rsplit("/", 1)[1]), ("PUT", "d1"))
     def test_draft_deleted_in_gmail_is_recreated_once(self):
         with self.calls(Resp(404, {"error": {"message": "not found"}}), Resp(200, {"id": "d2"})):
-            self.assertEqual(G.create_or_replace("S", "B", "gone"), ("d2", "created"))
+            self.assertEqual(G.create_or_replace("S", "B", "gone")[:2], ("d2", "created"))
     def test_to_is_demo_email_only_no_cc_bcc(self):
         with self.calls(Resp(200, {"id": "d1"})) as r:
             G.create_or_replace("Subject here", "Body here")

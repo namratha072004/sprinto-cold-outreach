@@ -255,3 +255,19 @@ CREATE INDEX IF NOT EXISTS idx_companies_run ON companies (run_id);
 CREATE INDEX IF NOT EXISTS idx_evidence_company ON evidence (company_id);
 CREATE INDEX IF NOT EXISTS idx_discovery_run ON discovery_results (run_id);
 CREATE INDEX IF NOT EXISTS idx_log_run ON run_log (run_id, at);
+
+-- ============================== v2 additions (safe to re-run) ==============================
+ALTER TABLE companies ALTER COLUMN domain DROP NOT NULL;                -- a shortlisted company has no verified website until the website step succeeds
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS shortlist_rank int;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS overruled boolean NOT NULL DEFAULT false;   -- the Growth Lead disagreed with a no-go
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS overrule_note text;
+ALTER TABLE discovery_results ADD COLUMN IF NOT EXISTS outcome text;      -- what happened to this article (shortlisted, merged, not_funding_news, ...)
+ALTER TABLE discovery_results ADD COLUMN IF NOT EXISTS outcome_note text;
+ALTER TABLE discovery_results ADD COLUMN IF NOT EXISTS merged_into bigint;
+ALTER TABLE discovery_results ADD COLUMN IF NOT EXISTS company_id bigint;
+ALTER TABLE shortlist ADD COLUMN IF NOT EXISTS company_id bigint;
+ALTER TABLE emails ADD COLUMN IF NOT EXISTS gmail_message_id text;        -- lets the dashboard open the exact Gmail draft
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS email_verification text;    -- Hunter's verdict on the address (research data only)
+ALTER TABLE emails DROP CONSTRAINT IF EXISTS emails_review_decision_check;
+ALTER TABLE emails ADD CONSTRAINT emails_review_decision_check CHECK (review_decision IN ('pending', 'approved', 'edited', 'rejected', 'done'));
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS claimed_at timestamptz;     -- stops two browser tabs from running the same step twice

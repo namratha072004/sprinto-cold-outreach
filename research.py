@@ -21,6 +21,10 @@ def start_run(params=None):
     row = db.one("INSERT INTO runs (rubric_version_id, params) VALUES (%s,%s) RETURNING id", (cfg["id"], db.J({**(params or {}), "rubric_version": cfg["version"], "context_sha256": cfg["context_sha256"]})))
     return str(row["id"])
 
+def close_run_if_done(run_id):
+    """A run is DONE once none of its companies is still working."""
+    db.x("UPDATE runs SET status='DONE', finished_at=now() WHERE id=%s AND status='RUNNING' AND NOT EXISTS (SELECT 1 FROM companies WHERE run_id=%s AND stage<>'done')", (run_id, run_id))
+
 def log(run_id, company_id, event, detail=None, level="info"):
     """Logging must never break a company (rubric 11: logging fails -> keep the work, retry logging only)."""
     try:
@@ -31,12 +35,15 @@ def log(run_id, company_id, event, detail=None, level="info"):
 def _kind(url, news):
     return "news" if url in news else "website"
 
-def research_company(run_id, domain):
+def research_company(run_id, domain, cid=None):
     """Returns the saved company row. status QUALIFIED means: ready for the Hunter contact step."""
     cfg = ensure_rubric()
     t0, usage = time.time(), {}
-    cid = db.one("INSERT INTO companies (run_id, domain, status, stage, started_at) VALUES (%s,%s,'WORKING','reading_website',now()) "
-                 "ON CONFLICT (run_id, domain) DO UPDATE SET status='WORKING', stage='reading_website', started_at=now() RETURNING id", (run_id, domain))["id"]
+    if cid:                                                    # a shortlisted company: the row already exists
+        db.x("UPDATE companies SET domain=%s, status='WORKING', stage='reading_website', started_at=COALESCE(started_at, now()) WHERE id=%s", (domain, cid))
+    else:
+        cid = db.one("INSERT INTO companies (run_id, domain, status, stage, started_at) VALUES (%s,%s,'WORKING','reading_website',now()) "
+                     "ON CONFLICT (run_id, domain) DO UPDATE SET status='WORKING', stage='reading_website', started_at=now() RETURNING id", (run_id, domain))["id"]
     log(run_id, cid, "company_started", {"domain": domain, "rubric": cfg["version"]})
     sources, fetched, pages, retrieved, news_pub, first_round = {}, set(), [], {}, {}, {}
     result = {"status": "ERROR", "stage": "done", "reason": "", "flags": [], "limit_hit": False}
@@ -127,7 +134,7 @@ def research_company(run_id, domain):
     fd = P.parse_date(a["funding"].get("date")) if a else None
     db.x("""UPDATE companies SET name=%s, status=%s, stage=%s, funding_stage=%s, funding_date=%s, total_score=%s, gates=%s, flags=%s, reason=%s,
             escalation_reason=%s, research_limit_hit=%s, retry_counts=%s, usage=%s, finished_at=CASE WHEN %s='done' THEN now() END,
-            seconds=%s, assessment=%s, sources_used=%s, sources_text=%s, updated_at=now() WHERE id=%s""",
+            seconds=COALESCE(seconds,0)+%s, assessment=%s, sources_used=%s, sources_text=%s, updated_at=now() WHERE id=%s""",
          ((a or {}).get("company_name") or domain, result["status"], result["stage"], (a or {}).get("funding", {}).get("stage"), fd,
           d["total"] if d else None, db.J(d["gates"] if d else None), result["flags"], result["reason"], esc, result["limit_hit"],
           db.J(retry), db.J(usage), result["stage"], secs, db.J(a), db.J([{"url": u, "kind": _kind(u, news_pub)} for u in sources]), db.J(sources), cid))
