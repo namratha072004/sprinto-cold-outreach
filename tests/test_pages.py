@@ -140,6 +140,16 @@ class TestSettings(Base):
         pol = q("SELECT value FROM rubric_rules WHERE rubric_version_id=%s AND area='shortlist' AND key='policy'", new["id"])["value"]
         self.assertEqual((pol["signal_keywords"], pol["max_age_months"], len(pol["outside_stage_patterns"])), (["saas", "kubernetes"], 6, 5))           # other policy parts kept
         self.assertEqual(self.db.one("SELECT count(*) n FROM rubric_rules WHERE rubric_version_id=%s", (new["id"],))["n"], self.db.one("SELECT count(*) n FROM rubric_rules WHERE rubric_version_id=%s", (old_id,))["n"])
+    def test_the_role_rule_is_a_versioned_rubric_setting(self):
+        r = self.post("/api/settings", {"rules": {"contact.only_preferred_roles": False}}); self.assertEqual(r.status_code, 200, r.get_json())
+        self.assertIs(self.db.one("select value from rubric_rules r join rubric_versions v on v.id=r.rubric_version_id where v.is_active and area='contact' and key='only_preferred_roles'")["value"], False)
+        self.assertIs(self.c.get("/api/settings").get_json()["read_only"]["only_preferred_roles"], False)
+        import rubric_db, rubric as R
+        saved = R.ONLY_PREFERRED_ROLES
+        try:
+            rubric_db.apply(R, rubric_db.load()); self.assertIs(R.ONLY_PREFERRED_ROLES, False)             # the running code follows the saved rule
+        finally: R.ONLY_PREFERRED_ROLES = saved
+        self.assertEqual(self.post("/api/settings", {"rules": {"made.up": True}}).status_code, 400)
     def test_bad_input_is_refused_and_nothing_changes(self):
         for bad, why in [({"weights": {"business_fit": 50, "customer_trust": 20, "compliance_workload": 20, "reason_now": 20, "delivery_complexity": 10}}, "add up to 100"),
                          ({"thresholds": {"total_min": 150}}, "between"), ({"limits": {"hunter_calls_per_run": "lots"}}, "number"), ({"capabilities": [" "]}, "capability"),

@@ -35,8 +35,8 @@ TYPE_KEYS = [("security", ["security", "trust", "compliance", "soc2", "soc-2", "
              ("careers", ["career", "jobs", "join-us", "join"]),
              ("news", ["news", "press", "blog", "announce"]),
              ("about", ["about", "company", "team", "leadership"])]
-GUESS_PATHS = {"security": ["/security", "/trust"], "customers": ["/customers"], "product": ["/product", "/platform"],
-               "careers": ["/careers"], "about": ["/about"]}
+GUESS_PATHS = {"security": ["/security", "/trust", "/compliance", "/trust-center"], "customers": ["/customers", "/case-studies", "/customer-stories"],
+               "product": ["/product", "/platform", "/solutions", "/features"], "careers": ["/careers", "/jobs"], "about": ["/about", "/company", "/about-us"]}
 JOB_HOSTS = ("greenhouse.io", "lever.co", "ashbyhq.com", "workable.com")
 NEVER_FETCH_HOSTS = ("linkedin.com",)                       # brief: never scrape LinkedIn
 LOGIN_HINT = re.compile(r"/(login|log-in|signin|sign-in|sign_in|signup|sign-up|auth|sso|account|dashboard|app)(/|$)", re.I)
@@ -162,7 +162,7 @@ def candidates_from(domain, links):
     have = {c["type"] for c in out}
     for t, paths in GUESS_PATHS.items():
         if t not in have:
-            out.append({"url": f"https://{domain}{paths[0]}", "type": t, "guessed": True})
+            out.extend({"url": f"https://{domain}{p}", "type": t, "guessed": True} for p in paths)     # the next-best address is tried if one is a 404
     return out
 
 def pick_pages(cands, fetched, wanted_types, n):
@@ -190,9 +190,12 @@ def gemini_json(prompt, usage):
         raise RuntimeError("GEMINI_API_KEY is empty in .env")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     text, last = prompt, None
+    level = env("GEMINI_THINKING_LEVEL", "low")                 # measured on a real company read: 35 s -> 11 s, identical scores
     for attempt in range(1, 4):
         body = {"contents": [{"parts": [{"text": text}]}],
                 "generationConfig": {"temperature": 0, "responseMimeType": "application/json", "maxOutputTokens": 8192}}
+        if level and level != "default":
+            body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": level}
         usage["calls"] = usage.get("calls", 0) + 1
         if attempt > 1:
             usage["retries"] = usage.get("retries", 0) + 1
@@ -201,6 +204,10 @@ def gemini_json(prompt, usage):
             if r.status_code in (429, 500, 502, 503, 504):
                 last = f"HTTP {r.status_code}"
                 time.sleep(5 * attempt * attempt)
+                continue
+            if r.status_code == 400 and level and "thinking" in r.text.lower():
+                level = None                                    # this model does not support that setting: ask again without it
+                usage["calls"] -= 1
                 continue
             if r.status_code in (400, 401, 403, 404):
                 raise RuntimeError(f"Gemini error {r.status_code}: {r.json().get('error', {}).get('message', '')[:160]} "
@@ -572,9 +579,12 @@ def hunter_domain_search(domain):
     S.kv_put("cache", f"hunter_{domain}", {k: v for k, v in c.items() if k != "from_cache"})
     return c
 
-ROLE_RULES = [("compliance_grc_leader", r"compliance|grc|governance|risk|privacy|trust"),
-              ("security_leader_ciso", r"security|ciso|infosec|information security"),
-              ("cto_vp_engineering", r"\bcto\b|chief technology|vp.{0,12}eng|head of eng|engineering"),
+# The four roles in the rubric (PDF section 5). A title counts only if it names the function AND a leadership level:
+# "Head of Security" yes, "Security Engineer" no, "Director, Strategy & Operations" no.
+LEADER = r"chief|ciso|\bvp\b|vice president|\bsvp\b|\bevp\b|head\b|director|\blead\b|manager|officer|principal|owner|president"
+ROLE_RULES = [("compliance_grc_leader", rf"(compliance|grc|governance|risk|privacy|trust).*({LEADER})|({LEADER}).*(compliance|grc|governance|risk|privacy|trust)"),
+              ("security_leader_ciso", rf"\bciso\b|(security|infosec).*({LEADER})|({LEADER}).*(security|infosec)"),
+              ("cto_vp_engineering", r"\bcto\b|chief (technology|technical)|head of (software |platform |product )?(engineering|technology)|(vp|vice president|director|svp|evp)[,\s]*(of|-)?\s*(software |platform |product )?engineering\b|engineering (director|head)\b"),
               ("technical_founder_ceo", r"founder|\bceo\b|chief executive")]
 ROLE_LABEL = {"compliance_grc_leader": "compliance/GRC leader", "security_leader_ciso": "security leader",
               "cto_vp_engineering": "CTO / engineering head", "technical_founder_ceo": "founder / CEO", "other": "other role"}
@@ -619,10 +629,12 @@ def score_candidates(company, cands, usage):
         if not cands[i].get("position"):
             s["functional_ownership"] = 0                      # no title on record = no evidence of ownership
         total = sum(s.values())
-        ok = total >= R.CONTACT_PASS_TOTAL and s["company_association"] > 0 and s["functional_ownership"] > 0
         role = classify_role(cands[i].get("position"))          # role from the title text, by code
+        role_ok = (not getattr(R, "ONLY_PREFERRED_ROLES", True)) or role != "other"     # must be one of the four rubric roles
+        ok = total >= R.CONTACT_PASS_TOTAL and s["company_association"] > 0 and s["functional_ownership"] > 0 and role_ok
+        why = str(x.get("reasoning", ""))[:300] + ("" if role_ok else " | NOT eligible: the title is not one of the four roles the rubric prefers (compliance/GRC, security, CTO/VP Engineering, founder/CEO).")
         rec = {"index": i, "name": cands[i]["name"], "position": cands[i].get("position"), "scores": s, "total": total,
-               "pass": ok, "role_category": role, "reasoning": str(x.get("reasoning", ""))[:300]}
+               "pass": ok, "role_category": role, "role_ok": role_ok, "reasoning": why}
         scored.append(rec)
         if ok:
             ranked.append((R.ROLE_PREFERENCE.index(role), -total, -(cands[i].get("confidence") or 0), i, rec))

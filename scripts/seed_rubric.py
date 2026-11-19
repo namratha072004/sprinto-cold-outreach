@@ -113,6 +113,7 @@ RULES = {
    "identity_quality": {"0": "Missing/conflicting", "1": "Partially supported", "2": "Consistent name/title with evidence"}},
  ("contact", "role_preference"): ["compliance_grc_leader", "security_leader_ciso", "cto_vp_engineering", "technical_founder_ceo"],   # PDF s5
  ("contact", "never_first_result_by_default"): True,
+ ("contact", "only_preferred_roles"): True,                  # PDF s5: role preference = the only roles that may be chosen; anyone else = NO_SUITABLE_CONTACT
  ("pain", "criteria_max"): {"account_specific_evidence": 3, "relevance_to_person": 2, "plausible_business_consequence": 2,
                              "capability_match": 2, "honest_wording": 1},        # PDF s6
  ("pain", "must_store"): ["observed fact", "evidence", "hypothesis", "role relevance", "possible consequence", "capability", "score"],

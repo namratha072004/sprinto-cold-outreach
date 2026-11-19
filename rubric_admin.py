@@ -10,6 +10,7 @@ THRESHOLD_FIELDS = {"total_min": (0, 100), "contact_pass_total": (0, 10), "pain_
 LIMIT_FIELDS = {"initial_extra_pages": (1, 10), "max_extra_rounds": (0, 6), "pages_per_round": (1, 6), "max_read_attempts": (1, 5),
                 "email_max_revisions": (0, 5), "hunter_calls_per_run": (0, 50), "shortlist_size": (1, 50)}
 POLICY_NUMERIC = {"stage_points": (0, 10), "signal_points_each": (0, 5), "signal_points_max": (0, 10), "max_age_months": (1, 60)}
+RULE_FLAGS = {"contact.only_preferred_roles": ("contact", "only_preferred_roles")}
 LABELS = {"total_min": "Score needed to qualify (out of 100)", "contact_pass_total": "Contact score needed (out of 10)", "pain_pass_total": "Pain-point score needed (out of 10)",
           "email_pass_total": "Email quality score needed (out of 10)", "email_words_target_min": "Email length, fewest words", "email_words_target_max": "Email length, most words",
           "reason_now_level1_months": "Reason-to-engage window, level 1 (months)", "reason_now_level2_months": "Reason-to-engage window, level 2 (months)",
@@ -32,7 +33,7 @@ def current():
             "queries": cfg["rules"].get(("search", "query_templates_PROPOSED")) or cfg["rules"].get(("search", "query_templates")) or [],
             "read_only": {"gates": [{"key": g["key"], "label": g["label"], "rule": g["params"]} for g in cfg["gates"].values()],
                           "levels": {d["key"]: cfg["levels"][d["key"]] for d in cfg["dimensions"]},
-                          "banned_phrases": cfg["rules"].get(("email", "banned_patterns"), []), "role_order": cfg["rules"].get(("contact", "role_preference"), [])},
+                          "banned_phrases": cfg["rules"].get(("email", "banned_patterns"), []), "only_preferred_roles": cfg["rules"].get(("contact", "only_preferred_roles"), True), "role_order": cfg["rules"].get(("contact", "role_preference"), [])},
             "versions": versions}
 
 def _num(v, lo, hi, name):
@@ -70,6 +71,11 @@ def validate(ch):
         if not caps:
             raise ValueError("At least one approved Sprinto capability is required.")
         out["capabilities"] = caps
+    if "rules" in ch:
+        bad = [k for k in ch["rules"] if k not in RULE_FLAGS]
+        if bad:
+            raise ValueError("Unknown rule: " + ", ".join(bad))
+        out["rules"] = {k: bool(v) for k, v in ch["rules"].items()}
     if "queries" in ch:
         qs = [str(x).strip() for x in ch["queries"] if str(x).strip()]
         if not 1 <= len(qs) <= 10:
@@ -106,6 +112,9 @@ def save(changes, who="growth lead"):
                 cur.execute("UPDATE rubric_gates SET params=jsonb_set(params,'{min}',to_jsonb(%s::numeric)) WHERE rubric_version_id=%s AND key='score'", (v, vid))
         for k, v in ch.get("limits", {}).items():
             cur.execute("UPDATE rubric_limits SET value=%s WHERE rubric_version_id=%s AND key=%s", (v, vid, k))
+        for k, v in ch.get("rules", {}).items():
+            area, key = RULE_FLAGS[k]
+            cur.execute("INSERT INTO rubric_rules VALUES (%s,%s,%s,%s) ON CONFLICT (rubric_version_id, area, key) DO UPDATE SET value=EXCLUDED.value", (vid, area, key, db.J(v)))
         if "capabilities" in ch:
             cur.execute("DELETE FROM rubric_capabilities WHERE rubric_version_id=%s", (vid,))
             for c in ch["capabilities"]:

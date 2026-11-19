@@ -47,6 +47,7 @@ def apply(R, cfg):
     R.APPROVED_CAPABILITIES = list(cfg["capabilities"])
     R.LEVELS = "\n".join(f"{d['key']} ({d['weight']}): " + "; ".join(f"{lv}={txt}" for lv, txt in sorted(cfg["levels"][d["key"]].items()))
                          for d in cfg["dimensions"])
+    R.ONLY_PREFERRED_ROLES = bool(cfg["rules"].get(("contact", "only_preferred_roles"), True))
     R.MANDATORY_CHECKS = list(cfg["rules"][("email", "mandatory_checks")])
     R.BANNED_PATTERNS = list(cfg["rules"][("email", "banned_patterns")])
     R.REASON_NOW_L1_MONTHS = int(t["reason_now_level1_months"])

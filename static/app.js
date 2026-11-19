@@ -303,6 +303,7 @@ async function pageSettings() {
     <div class="card"><h3>Approved Sprinto capabilities</h3><div class="small muted">An email may name exactly one of these. One per line.</div><textarea class="f" id="caps" ${needCode()}>${esc(d.capabilities.join("\n"))}</textarea></div>
     <div class="actions"><button class="btn primary" id="save" ${needCode()}>Save as a new version</button><span class="muted small" id="save-msg" style="align-self:center"></span></div>
     <details style="margin-top:22px"><summary>Fixed by the rubric (shown, not editable here)</summary><div class="inner"><div class="dim"><b>Gates</b> (all required)${d.read_only.gates.map(g => `<div class="small">${esc(g.label)}: <span class="muted">${esc(JSON.stringify(g.rule))}</span></div>`).join("")}</div>
+      <div class="dim"><b>Who can be chosen</b><div class="small">${d.read_only.only_preferred_roles ? "Only the four preferred roles. Anyone else means no suitable contact." : "Any role that scores well."}</div></div>
       <div class="dim"><b>Contact role order</b><div class="small">${d.read_only.role_order.map(x => esc(ROLE[x] || x)).join(" → ")}</div></div>
       <div class="dim"><b>Phrases an email may never contain</b><div class="small muted">${d.read_only.banned_phrases.map(esc).join(" · ")}</div></div>
       ${Object.entries(d.read_only.levels).map(([k, lv]) => `<div class="dim"><b>${esc(DIM[k] || k)}</b>${Object.entries(lv).map(([n2, txt]) => `<div class="small">Level ${n2}: <span class="muted">${esc(txt)}</span></div>`).join("")}</div>`).join("")}</div></details>

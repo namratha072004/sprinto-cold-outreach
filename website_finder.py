@@ -46,24 +46,40 @@ def verify(company, headline, domain, usage):
         return {"ok": False, "why": f"could not confirm that {domain} is the company in the headline ({(out or {}).get('reason', 'no verified quote')[:120]})"}
     return {"ok": True, "domain": domain, "url": page["url"], "excerpt": ex.strip(), "retrieved_on": page["retrieved_at"]}
 
+def name_candidates(company):
+    """Addresses built from the company's own name (acme.com, acme.ai ...). They are only CANDIDATES: each must still pass the homepage check."""
+    base = re.sub(r"[^a-z0-9]+", "", (company or "").lower())
+    return [f"{base}.{t}" for t in ("com", "ai", "io", "co", "app")] if 3 <= len(base) <= 24 else []
+
 def remembered(company):
     """A website this company already earned in an earlier run (verified on its own homepage back then). Gemini's suggestions can vary between runs."""
     import db
     rows = db.q("SELECT DISTINCT domain, name FROM companies WHERE domain IS NOT NULL AND assessment IS NOT NULL AND name IS NOT NULL")
     return [r["domain"] for r in rows if norm(r["name"]) == norm(company)]
 
+MAX_SECONDS = 75          # one company's website search may not hold up a run for longer than this
+
 def find(company, headline, usage):
+    import time
+    t0 = time.time()
     tried, last = set(), None
     try:
         known = remembered(company)
     except Exception:
         known = []
-    for domain in known + [None]:
-        domain = domain or suggest(company, headline, usage)
+    queue = known + ["__suggest__"]
+    while queue:
+        if time.time() - t0 > MAX_SECONDS and last is not None:
+            return {"ok": False, "why": last["why"] + " (stopped looking after " + str(MAX_SECONDS) + " seconds)"}
+        domain = queue.pop(0)
+        if domain == "__suggest__":
+            domain = suggest(company, headline, usage)
+            queue = queue + [d for d in name_candidates(company) if d != domain]       # last resort, only after Gemini has no (verified) answer
         if not domain or domain in tried:
             continue
         tried.add(domain)
-        last = verify(company, headline, domain, usage)          # even a remembered website is checked again against the live homepage
-        if last["ok"]:
-            return last
+        r = verify(company, headline, domain, usage)             # every candidate is checked against the live homepage, never trusted
+        if r["ok"]:
+            return r
+        last = last if (last and domain in name_candidates(company)) else r
     return last or {"ok": False, "why": "no website could be suggested with confidence"}

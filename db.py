@@ -1,6 +1,6 @@
 """Neon Postgres helper. One cached connection per process, reconnects once if it dropped.
 Secrets: DATABASE_URL is read from .env / Vercel env and never printed."""
-import json, os, re
+import json, os, re, time
 import psycopg2, psycopg2.extras
 import settings as S
 
@@ -31,15 +31,25 @@ def conn():
     return c
 
 def _run(sql, params, fetch):
-    for attempt in (1, 2):
+    """Runs one statement. A dropped or hiccuping connection (SSL error, server closed it, no free socket) is retried on a fresh connection, up to 3 tries."""
+    last = None
+    for attempt in range(1, 4):
         try:
             with conn().cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(sql, params)
                 return cur.fetchall() if fetch and cur.description else cur.rowcount
-        except (psycopg2.OperationalError, psycopg2.InterfaceError):
+        except (psycopg2.OperationalError, psycopg2.InterfaceError, psycopg2.DatabaseError) as e:
+            if isinstance(e, (psycopg2.errors.SyntaxError, psycopg2.IntegrityError, psycopg2.ProgrammingError, psycopg2.DataError)):
+                raise                                           # a real mistake in the statement: do not retry
+            last = e
+            try:
+                if _C["conn"] is not None:
+                    _C["conn"].close()
+            except Exception:
+                pass
             _C["conn"] = None
-            if attempt == 2:
-                raise RuntimeError("Database connection failed.")
+            time.sleep(0.4 * attempt)
+    raise RuntimeError("Database connection failed.") from last
 
 def q(sql, params=()):
     """Run a query, return a list of dict rows."""

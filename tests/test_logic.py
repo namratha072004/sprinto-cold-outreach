@@ -312,3 +312,77 @@ class TestFetchRules(Base):
 if __name__ == "__main__":
     unittest.main()
 
+
+
+class TestRolesSpeedAndPages(Base):
+    def test_only_leadership_titles_in_the_four_rubric_roles_count(self):
+        cases = {"Head of Security": "security_leader_ciso", "Chief Information Security Officer": "security_leader_ciso", "CISO": "security_leader_ciso", "Security Lead": "security_leader_ciso",
+                 "Head of Compliance": "compliance_grc_leader", "Compliance Manager": "compliance_grc_leader", "Director of GRC": "compliance_grc_leader",
+                 "VP of Engineering": "cto_vp_engineering", "Vice President, Engineering": "cto_vp_engineering", "Director of Engineering": "cto_vp_engineering", "VP, Engineering": "cto_vp_engineering", "Head of Platform Engineering": "cto_vp_engineering", "Director of Data Engineering": "other", "VP of Data Science": "other", "CTO": "cto_vp_engineering", "Chief Technology Officer": "cto_vp_engineering",
+                 "Co-Founder & CEO": "technical_founder_ceo", "CEO": "technical_founder_ceo",
+                 "Director, Strategy & Operations": "other", "Security Engineer": "other", "Senior Security Engineer": "other", "Software Engineer": "other", "Engineering Manager": "other",
+                 "GRC Analyst": "other", "Chief Sales Officer": "other", "VP of Marketing": "other", "Finance Manager": "other", "Head of Growth": "other", None: "other"}
+        for title, want in cases.items():
+            self.assertEqual(P.classify_role(title), want, title)
+    def scored(self, position, only=True):
+        cands = [{"name": "Eddie P", "first_name": "Eddie", "position": position, "confidence": 90}]
+        gem = lambda p, u: {"candidates": [{"index": 0, "scores": {"company_association": 2, "functional_ownership": 1, "ability_to_drive_action": 2, "match_to_need": 2, "identity_quality": 1}, "reasoning": "adjacent"}]}
+        saved = R.ONLY_PREFERRED_ROLES; R.ONLY_PREFERRED_ROLES = only
+        try:
+            with mock.patch.object(P, "gemini_json", side_effect=gem):
+                return P.score_candidates("Coram", cands, {})
+        finally: R.ONLY_PREFERRED_ROLES = saved
+    def test_a_good_score_is_not_enough_if_the_title_is_not_one_of_the_four_roles(self):
+        scored, chosen = self.scored("Director, Strategy & Operations")            # the real Coram AI case: 8/10, ownership 'adjacent'
+        self.assertEqual((scored[0]["total"], scored[0]["pass"], scored[0]["role_ok"]), (8, False, False)); self.assertIsNone(chosen)
+        self.assertIn("NOT eligible", scored[0]["reasoning"])
+    def test_the_same_score_passes_for_a_preferred_role(self):
+        _, chosen = self.scored("Head of Engineering"); self.assertEqual(chosen["name"], "Eddie P")
+    def test_the_role_rule_can_be_switched_off_in_the_rubric(self):
+        _, chosen = self.scored("Director, Strategy & Operations", only=False); self.assertIsNotNone(chosen)
+    def test_a_missing_guessed_page_does_not_use_up_the_page_budget(self):
+        import research
+        cands = P.candidates_from("acme.test", [])                                   # homepage linked nothing: every type is guessed, several addresses each
+        ok_urls = {"https://acme.test/trust", "https://acme.test/case-studies", "https://acme.test/product"}
+        reads = []
+        def read(c, rnd):
+            reads.append(c["url"]); return ({"status": "ok" if c["url"] in ok_urls else "not_found"}, None)
+        fetched = set(); chosen = research.read_until(cands, fetched, lambda c, r: (fetched.add(c["url"]), read(c, r))[1], ["security", "customers", "product"], 3, 0)
+        self.assertEqual(len([u for u in reads if u in ok_urls]), 3)                 # three pages really read...
+        self.assertGreater(len(reads), 3)                                           # ...even though some addresses were 404s
+        self.assertLessEqual(len(reads), 6)                                         # and the retries are bounded (twice the budget)
+    def test_when_nothing_exists_the_attempts_stop(self):
+        import research
+        cands = P.candidates_from("acme.test", []); fetched = set(); n = []
+        research.read_until(cands, fetched, lambda c, r: (fetched.add(c["url"]), n.append(1), ({"status": "not_found"}, None))[2], ["security", "customers", "product"], 3, 0)
+        self.assertEqual(len(n), 6)
+    def test_gemini_is_asked_for_low_thinking_and_retries_without_it_if_the_model_refuses(self):
+        class Resp:
+            def __init__(self, code, body): self.status_code, self._b, self.text = code, body, str(body)
+            def json(self): return self._b
+        ok = {"candidates": [{"content": {"parts": [{"text": '{"a": 1}'}]}}], "usageMetadata": {}}
+        bodies = []
+        def post(url, headers=None, json=None, timeout=None):
+            bodies.append(json["generationConfig"].get("thinkingConfig")); return Resp(400, {"error": {"message": "Thinking level LOW is not supported"}}) if len(bodies) == 1 else Resp(200, ok)
+        u = {}
+        with mock.patch.object(P.requests, "post", side_effect=post):
+            self.assertEqual(P.gemini_json("x", u), {"a": 1})
+        self.assertEqual(bodies, [{"thinkingLevel": "low"}, None]); self.assertEqual(u["calls"], 1)       # the refused attempt is not counted as a call
+    def test_website_candidates_from_the_name_are_only_tried_after_gemini_fails_and_are_still_verified(self):
+        import website_finder as W
+        self.assertEqual(W.name_candidates("Winn.ai")[:2], ["winnai.com", "winnai.ai"]); self.assertEqual(W.name_candidates("AB"), [])
+        tried = []
+        def verify(company, headline, domain, usage):
+            tried.append(domain); return {"ok": domain == "alta.ai", "domain": domain, "url": "u", "excerpt": "e", "retrieved_on": "d", "why": "no"}
+        with mock.patch.object(W, "remembered", return_value=[]), mock.patch.object(W, "suggest", return_value=None), mock.patch.object(W, "verify", side_effect=verify):
+            self.assertEqual(W.find("Alta", "Alta raises", {})["domain"], "alta.ai")
+        self.assertEqual(tried, ["alta.com", "alta.ai"])                                      # in order, stopping at the first that passes
+
+    def test_the_website_search_gives_up_after_a_time_limit(self):
+        import website_finder as W, time
+        calls = []
+        def slow_verify(company, headline, domain, usage):
+            calls.append(domain); time.sleep(0.05); return {"ok": False, "why": "not the company"}
+        with mock.patch.object(W, "MAX_SECONDS", 0.1), mock.patch.object(W, "remembered", return_value=[]), mock.patch.object(W, "suggest", return_value="x.com"), mock.patch.object(W, "verify", side_effect=slow_verify):
+            r = W.find("Alta", "h", {})
+        self.assertFalse(r["ok"]); self.assertIn("stopped looking", r["why"]); self.assertLess(len(calls), 6)

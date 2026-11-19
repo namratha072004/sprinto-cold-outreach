@@ -21,6 +21,7 @@ MAX_CHARS_PER_SOURCE = 7000
 REASON_NOW_L2_MONTHS, REASON_NOW_L1_MONTHS = 6, 12   # overwritten from Neon by rubric_db.apply
 SPRINTO_FACTS = ""   # section 2 of context/sprinto_context.md, loaded at run time by sprinto_context.apply
 NO_FACTS = "No Sprinto facts were supplied. Say only that Sprinto automates compliance (SOC 2, ISO 27001, GDPR) for SaaS companies."
+ONLY_PREFERRED_ROLES = True   # PDF section 5: only the four preferred roles can be chosen; Neon overwrites
 MANDATORY_CHECKS = ["correct_person_and_company", "evidence_for_every_factual_claim", "hypothesis_phrased_tentatively",
                     "no_invented_metrics_relationships_urgency_guarantees", "no_false_re_or_following_up", "no_unsupported_compliance_deficiency",
                     "addressed_by_name", "one_primary_pain", "no_generic_praise_jargon_or_fake_familiarity"]   # PDF section 7; Neon overwrites

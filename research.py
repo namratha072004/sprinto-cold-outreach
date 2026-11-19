@@ -35,6 +35,22 @@ def log(run_id, company_id, event, detail=None, level="info"):
 def _kind(url, news):
     return "news" if url in news else "website"
 
+def read_until(cands, fetched, read, types, want, rnd):
+    """Read pages until `want` of them were READ SUCCESSFULLY. A page that does not exist (a guessed address) is not a page read, so it does not
+    use up the budget; the next-best address is tried instead. Bounded: at most twice `want` attempts."""
+    got = attempts = 0
+    chosen = []
+    while got < want and attempts < 2 * want:
+        batch = P.pick_pages(cands, fetched, types, want - got)
+        if not batch:
+            break
+        for c in batch:
+            p, _ = read(c, rnd)
+            attempts += 1
+            chosen.append(c)
+            got += 1 if p["status"] == "ok" else 0
+    return chosen
+
 def research_company(run_id, domain, cid=None):
     """Returns the saved company row. status QUALIFIED means: ready for the Hunter contact step."""
     cfg = ensure_rubric()
@@ -102,9 +118,7 @@ def research_company(run_id, domain, cid=None):
                     got = {e["type"] for e in extra}
                     cands = [c for c in cands if not (c.get("guessed") and c["type"] in got)] + extra
                     log(run_id, cid, "sitemap_used", {"pages": [e["url"] for e in extra]})
-            first = P.pick_pages(cands, fetched, ["security", "customers", "product"], R.INITIAL_EXTRA_PAGES)
-            for c in first:
-                read(c, 0)
+            first = read_until(cands, fetched, read, ["security", "customers", "product"], R.INITIAL_EXTRA_PAGES, 0)
             a = P.assess(domain, sources, usage)
             d = P.decide(a)
             for e in P.evidence_list(a):
@@ -116,16 +130,14 @@ def research_company(run_id, domain, cid=None):
                 if d["status"] in ("QUALIFIED", "DISQUALIFIED") or (d["status"] == "LOW_PRIORITY" and not a["missing"]):
                     break
                 types = [m.get("page_type") for m in a["missing"] if m.get("page_type")] or ["security", "customers", "product", "careers", "news", "about"]
-                chosen = P.pick_pages(cands, fetched, types, R.PAGES_PER_ROUND)
-                if not chosen:
+                if not P.pick_pages(cands, fetched, types, 1):
                     save_round(rnd, a["missing"], [], [], d["status"], "no new relevant pages left to read")
                     stop = "no_new_pages"
                     break
                 before = {P.ev_key(e) for e in P.evidence_list(a)}
                 gap = a["missing"]
                 before_pages = len(pages)
-                for c in chosen:
-                    read(c, rnd)
+                read_until(cands, fetched, read, types, R.PAGES_PER_ROUND, rnd)
                 a = P.assess(domain, sources, usage)
                 d = P.decide(a)
                 new_ev = [e for e in P.evidence_list(a) if P.ev_key(e) not in before]
