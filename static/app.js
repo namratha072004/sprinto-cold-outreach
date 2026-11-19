@@ -146,7 +146,8 @@ const decisionBadge = d => ({ pending: `<span class="badge t-warning">to review<
 async function loadDetail(id, into = "#detail") {
   const el = $(into); if (!el) return; el.innerHTML = `<div class="muted">Loading…</div>`;
   const r = await api(`/api/company/${id}`); if (!r.ok) { el.innerHTML = `<div class="note bad">Could not load this company.</div>`; return; }
-  S.detail = r.data; el.innerHTML = renderDetail(r.data); wireDetail(r.data, into);
+  if (!$(into)) return;                                                   // you moved to another page meanwhile
+  S.detail = r.data; $(into).innerHTML = renderDetail(r.data); wireDetail(r.data, into);
 }
 function evidenceHtml(list) {
   return (list || []).map(e => `<blockquote>“${esc(e.excerpt)}”<span class="src"><span class="lab t-${LABEL_TONE[e.label] || "neutral"}">${esc(e.label)}</span>${e.source_kind === "news" ? "Google News" : "Website"} · ${link(e.source_url)} · read ${esc(day(e.retrieved_on))}${e.published_on ? " · published " + esc(day(e.published_on)) : ""}</span></blockquote>`).join("");
@@ -201,7 +202,7 @@ function draftPanel(d) {
 }
 const wcount = t => (t.trim().match(/\S+/g) || []).length;
 function wireDetail(d, root) {
-  const R = $(root), id = d.company.id;
+  const R = $(root), id = d.company.id; if (!R) return;                  // the page changed while this was loading
   const act = async (path, body, ok) => { const r = await api(`/api/company/${id}/${path}`, body || {}); if (!r.ok) return fail(r); S.detail = r.data; if (ok || r.data.message) toast(r.data.message || ok);
     R.innerHTML = renderDetail(r.data); wireDetail(r.data, root); refreshChrome(); if (parseHash().page === "drafts") refreshCards(); };
   R.querySelectorAll("[data-fb]").forEach(b => b.onclick = () => act("contact-feedback", { correct: b.dataset.fb === "1" }, "Thanks, saved."));

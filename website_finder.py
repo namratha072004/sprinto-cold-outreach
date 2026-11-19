@@ -46,8 +46,24 @@ def verify(company, headline, domain, usage):
         return {"ok": False, "why": f"could not confirm that {domain} is the company in the headline ({(out or {}).get('reason', 'no verified quote')[:120]})"}
     return {"ok": True, "domain": domain, "url": page["url"], "excerpt": ex.strip(), "retrieved_on": page["retrieved_at"]}
 
+def remembered(company):
+    """A website this company already earned in an earlier run (verified on its own homepage back then). Gemini's suggestions can vary between runs."""
+    import db
+    rows = db.q("SELECT DISTINCT domain, name FROM companies WHERE domain IS NOT NULL AND assessment IS NOT NULL AND name IS NOT NULL")
+    return [r["domain"] for r in rows if norm(r["name"]) == norm(company)]
+
 def find(company, headline, usage):
-    domain = suggest(company, headline, usage)
-    if not domain:
-        return {"ok": False, "why": "no website could be suggested with confidence"}
-    return verify(company, headline, domain, usage)
+    tried, last = set(), None
+    try:
+        known = remembered(company)
+    except Exception:
+        known = []
+    for domain in known + [None]:
+        domain = domain or suggest(company, headline, usage)
+        if not domain or domain in tried:
+            continue
+        tried.add(domain)
+        last = verify(company, headline, domain, usage)          # even a remembered website is checked again against the live homepage
+        if last["ok"]:
+            return last
+    return last or {"ok": False, "why": "no website could be suggested with confidence"}

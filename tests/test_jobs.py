@@ -46,6 +46,16 @@ class TestWebsiteFinder(unittest.TestCase):
     def test_unreadable_homepage_is_a_failure_not_a_guess(self):
         with mock.patch.object(website_finder.scraper, "fetch_page", return_value=self.page("", "blocked")):
             self.assertIn("could not be read", website_finder.verify("Acme", "h", "acme.io", {})["why"])
+    def test_a_website_verified_in_an_earlier_run_is_tried_first_and_still_re_verified(self):
+        ok = {"ok": True, "domain": "acme.io", "url": "https://acme.io/", "excerpt": "Acme builds", "retrieved_on": "2026-11-19"}
+        with mock.patch.object(website_finder, "remembered", return_value=["acme.io"]), mock.patch.object(website_finder, "verify", return_value=ok) as v, mock.patch.object(website_finder, "suggest") as s:
+            self.assertTrue(website_finder.find("Acme", "h", {})["ok"])
+        v.assert_called_once(); s.assert_not_called()                                   # no model call needed, but the homepage was checked again
+    def test_a_remembered_website_that_no_longer_verifies_falls_back_to_a_fresh_suggestion(self):
+        bad, good = {"ok": False, "why": "gone"}, {"ok": True, "domain": "new.io", "url": "u", "excerpt": "e" * 20, "retrieved_on": "d"}
+        with mock.patch.object(website_finder, "remembered", return_value=["old.io"]), mock.patch.object(website_finder, "suggest", return_value="new.io"), \
+             mock.patch.object(website_finder, "verify", side_effect=[bad, good]):
+            self.assertEqual(website_finder.find("Acme", "h", {})["domain"], "new.io")
     def test_no_suggestion_means_unknown(self):
         with mock.patch.object(P, "gemini_json", return_value={"domain": None}):
             self.assertFalse(website_finder.find("Acme", "h", {})["ok"])
