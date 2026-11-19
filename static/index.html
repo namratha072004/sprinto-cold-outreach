@@ -10,23 +10,17 @@
 <body>
   <header class="topbar">
     <h1>Review desk</h1>
-    <span class="muted small">Nothing is sent until you approve it.</span>
+    <button class="btn primary" id="btn-run" title="Searches Google News for companies that match the ICP and saves what it finds">Run</button>
+    <span class="muted small" id="runmsg">Nothing is sent by this software. Your decisions are only recorded.</span>
     <span class="spacer"></span>
     <span id="pill-hunter" class="pill"></span>
-    <span id="pill-mail" class="pill"></span>
-    <a class="btn small" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" rel="noopener noreferrer" style="text-decoration:none">Open Gmail</a>
+    <span id="pill-gmail" class="pill"></span>
+    <a class="btn small" href="https://mail.google.com/mail/u/0/#drafts" target="_blank" rel="noopener noreferrer" style="text-decoration:none">Open Gmail Drafts</a>
     <button class="btn small" id="btn-score">Scorecard</button>
   </header>
   <main class="desk">
     <aside class="left">
-      <div class="add">
-        <textarea id="domains" placeholder="Paste company domains, one per line (acme.com)" aria-label="Company domains"></textarea>
-        <div class="row">
-          <button class="btn primary" id="btn-run">Run</button>
-          <button class="btn" id="btn-file">Load domains.txt</button>
-        </div>
-        <div class="runline" id="runline"></div>
-      </div>
+      <button class="item" id="btn-news" style="border-left-color:transparent"><div class="top"><span>Google News results</span><span id="news-count"></span></div><div class="dom">Why companies were found</div></button>
       <div class="list" id="list" role="list"></div>
     </aside>
     <section class="right" id="detail"></section>

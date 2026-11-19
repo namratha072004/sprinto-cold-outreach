@@ -18,6 +18,13 @@ MAX_ROUNDS = 3               # extra rounds
 PAGES_PER_ROUND = 2          # new pages per round
 MAX_READ_ATTEMPTS = 3        # per failed read
 MAX_CHARS_PER_SOURCE = 7000
+REASON_NOW_L2_MONTHS, REASON_NOW_L1_MONTHS = 6, 12   # overwritten from Neon by rubric_db.apply
+SPRINTO_FACTS = ""   # section 2 of context/sprinto_context.md, loaded at run time by sprinto_context.apply
+NO_FACTS = "No Sprinto facts were supplied. Say only that Sprinto automates compliance (SOC 2, ISO 27001, GDPR) for SaaS companies."
+MANDATORY_CHECKS = ["correct_person_and_company", "evidence_for_every_factual_claim", "hypothesis_phrased_tentatively",
+                    "no_invented_metrics_relationships_urgency_guarantees", "no_false_re_or_following_up", "no_unsupported_compliance_deficiency",
+                    "addressed_by_name", "one_primary_pain", "no_generic_praise_jargon_or_fake_familiarity"]   # PDF section 7; Neon overwrites
+BANNED_PATTERNS = [r"\bre:", r"following up", r"follow-up", r"follow up", r"circling back", r"guarantee", r"\b100%"]   # Neon overwrites
 
 CONTACT_PASS_TOTAL = 8       # out of 10
 PAIN_PASS_TOTAL = 7          # out of 10, each hypothesis
@@ -60,9 +67,11 @@ Return ONLY JSON in this shape:
  "employee_count": {{"value": str|null, "evidence": {{"source_url": str, "excerpt": str}}}},
  "dimensions": {{"business_fit": D, "customer_trust": D, "compliance_workload": D, "reason_now": D, "delivery_complexity": D}},
  "compliance_claims_exact": [str], "named_customers": [str], "hiring_signals": [str],
+ "conflicts": [{{"claim": str, "evidence": [{{"source_url": str, "excerpt": str}}]}}],
  "missing": [{{"gap": str, "page_type": str}}]}}
 where D = {{"level": 0|1|2, "state": "positive"|"missing"|"explicit_negative", "reasoning": str,
- "evidence": [{{"source_url": str, "excerpt": str, "dated": str|null}}]}}
+ "evidence": [{{"source_url": str, "excerpt": str, "dated": str|null, "label": "observed"|"inferred"}}]}}
+"label": "observed" if the excerpt directly states the fact, "inferred" if you conclude it from the excerpt. If two sources disagree on a fact, add both excerpts to "conflicts" and do not pick a side.
 
 SOURCES:
 {srcs}
@@ -96,6 +105,9 @@ def draft_prompt(facts, contact, hyp, sender, feedback=None):
     return f"""TASK=DRAFT
 Write a cold email from {sender} at Sprinto to {contact['name']} ({contact['position']}) at {facts['company_name']}.{fb}
 Rules: address them by first name; one specific hook that is a verified company fact; ONE primary pain stated tentatively; ONE supported Sprinto capability; one easy question as next step; 80-120 words; natural, concise; no generic praise, jargon or fake familiarity; no "Re:" or "following up"; no invented metrics, relationships, urgency, guarantees, pricing or compliance deficiency.
+About Sprinto you may use ONLY the facts below (from our context file), plus the ONE approved capability named below. Add nothing else about Sprinto: no features, how it works, speed, time saved, outcomes, prices, customer counts or company size.
+SPRINTO FACTS YOU MAY USE:
+{SPRINTO_FACTS or NO_FACTS}
 Hook fact: {hyp['observed_fact']} (source: {hyp['evidence']['source_url']})
 Pain hypothesis: {hyp['hypothesis']}
 Capability: {hyp['capability']}
@@ -106,11 +118,12 @@ def qa_prompt(facts, contact, hyp, draft, words):
     return f"""TASK=QA
 Strictly grade this cold email. Word count: {words}.
 Score 0-2 each: specific_hook (verified company fact relevant to recipient), useful_hypothesis (plausible problem linked to their responsibilities), relevant_value (one supported Sprinto capability), simple_next_step (one easy relevant question), clarity (natural, concise, about 80-120 words).
-Mandatory checks (true/false): correct_person_and_company, evidence_for_every_factual_claim, hypothesis_phrased_tentatively, no_invented_metrics_relationships_urgency_guarantees, no_false_re_or_following_up, no_unsupported_compliance_deficiency, addressed_by_name, one_primary_pain.
+Mandatory checks (true/false): {", ".join(MANDATORY_CHECKS)}. Allowed facts about Sprinto (anything else about Sprinto has no source: mark evidence_for_every_factual_claim false):
+{SPRINTO_FACTS or NO_FACTS}
 Recipient: {contact['name']}, {contact['position']}, {facts['company_name']}.
 Evidence: hook "{hyp['observed_fact']}" ({hyp['evidence']['excerpt']})
 EMAIL:
 Subject: {draft['subject']}
 {draft['body']}
-Return ONLY JSON: {{"scores": {{"specific_hook": int, "useful_hypothesis": int, "relevant_value": int, "simple_next_step": int, "clarity": int}}, "mandatory": {{"correct_person_and_company": bool, "evidence_for_every_factual_claim": bool, "hypothesis_phrased_tentatively": bool, "no_invented_metrics_relationships_urgency_guarantees": bool, "no_false_re_or_following_up": bool, "no_unsupported_compliance_deficiency": bool, "addressed_by_name": bool, "one_primary_pain": bool}}, "feedback": str}}
+Return ONLY JSON: {{"scores": {{"specific_hook": int, "useful_hypothesis": int, "relevant_value": int, "simple_next_step": int, "clarity": int}}, "mandatory": {{{", ".join(f'"{k}": bool' for k in MANDATORY_CHECKS)}}}, "feedback": str}}
 """

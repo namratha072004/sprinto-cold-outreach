@@ -1,3 +1,0 @@
-# One company domain per line. These two are a plumbing test picked by Claude, replace with your own.
-cal.com
-linear.app

@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import requests
 import settings as S
 
-NAME, BASE = "sprinto-outreach", "https://console.neon.tech/api/v2"
+NAME, BASE = "Sprinto", "https://console.neon.tech/api/v2"
 key = S.env("NEON_API_KEY")
 if not key:
     sys.exit("NEON_API_KEY is empty in .env. Paste it there first.")

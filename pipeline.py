@@ -2,12 +2,11 @@
 """Sprinto cold-outreach pipeline (draft-first).
 
     python3 pipeline.py domains.txt                 # research + draft, saves everything, sends nothing
-    python3 pipeline.py domains.txt --send-demo     # also asks in the terminal before sending to DEMO_EMAIL
-
+    
 Rules (scores, gates, thresholds) are in rubric.py. Code adds the scores and applies the gates.
 The AI only reads and writes. Every company's evidence, scores, retries, status and escalation reason
 are saved in output/<domain>/state.json. One company failing never stops the batch.
-Emails go ONLY to DEMO_EMAIL (see mailer.py). Prospect addresses are research data."""
+LEGACY first draft (file-based). The live flow is research.py + outreach.py on Neon. This software never sends mail."""
 import os, sys, re, json, time, hashlib, argparse, csv, datetime as dt
 from email.utils import parsedate_to_datetime
 from urllib.parse import urljoin, urlparse
@@ -280,7 +279,8 @@ def assess(domain, sources, usage):
         ev = []
         for e in raw.get("evidence") or []:
             if isinstance(e, dict) and ver.ok(e.get("source_url"), e.get("excerpt", "")):
-                ev.append({"source_url": e["source_url"], "excerpt": e["excerpt"].strip(), "dated": e.get("dated")})
+                ev.append({"source_url": e["source_url"], "excerpt": e["excerpt"].strip(), "dated": e.get("dated"),
+                           "label": e.get("label") if e.get("label") in ("observed", "inferred") else "inferred"})   # unlabelled = the cautious label
         state = raw.get("state") if raw.get("state") in ("positive", "missing", "explicit_negative") else "missing"
         if level > 0 and not ev:
             notes.append(f"{k}: AI claimed level {level} but gave no excerpt I could find in the pages, so it counts as 0")
@@ -294,15 +294,18 @@ def assess(domain, sources, usage):
         if k == "reason_now" and level > 0:
             ages = [abs((dt.date.today() - d).days) for d in (parse_date(e.get("dated")) for e in ev) if d]
             new = level
-            if level == 2 and not any(x <= 183 for x in ages):
+            if level == 2 and not any(x <= R.REASON_NOW_L2_MONTHS * 30.5 for x in ages):
                 new = 1
-            if new == 1 and not any(x <= 365 for x in ages):
+            if new == 1 and not any(x <= R.REASON_NOW_L1_MONTHS * 30.5 for x in ages):
                 new = 0
             if new != level:
                 notes.append(f"reason_now: dated evidence is undated or outside the window (6 months for level 2, 12 for level 1); level {level} -> {new}")
                 level = new
                 if level == 0:
                     state = "missing"
+        if level == 0 and state != "explicit_negative" and ev:
+            notes.append(f"{k}: scored 0, so its {len(ev)} attached excerpt(s) are not kept as supporting evidence")
+            ev = []                                  # evidence that did not earn a point must not look like support
         dims[k] = {"level": level, "state": state, "reasoning": str(raw.get("reasoning", ""))[:400], "evidence": ev}
     a["dimensions"] = dims
 
@@ -330,6 +333,9 @@ def assess(domain, sources, usage):
         notes.append("AI said not SaaS without proof I could find in the pages; treated as unclear")
         a["business_model"] = "unclear"
     a["disqualifier_evidence"] = de if proven else None
+    a["conflicts"] = [{"claim": str(c.get("claim", ""))[:200], "evidence": [e for e in (c.get("evidence") or []) if isinstance(e, dict) and ver.ok(e.get("source_url"), e.get("excerpt", ""))]}
+                      for c in (a.get("conflicts") or []) if isinstance(c, dict)]
+    a["conflicts"] = [c for c in a["conflicts"] if len(c["evidence"]) >= 2]      # a conflict needs two verified sides
     a["missing"] = [m for m in (a.get("missing") or []) if isinstance(m, dict)]
     a["verification_notes"] = notes
     a.setdefault("company_name", domain)
@@ -582,16 +588,7 @@ def classify_role(position):
 
 CONTACT_KEYS = ("company_association", "functional_ownership", "ability_to_drive_action", "match_to_need", "identity_quality")
 
-def pick_contact(company, domain, st, usage):
-    try:
-        res = hunter_domain_search(domain)
-    except HunterPaused as e:
-        st["status"] = "CONTACT_LOOKUP_PAUSED"
-        st["reason"] = f"Contact lookup paused: {e}. Qualified, but no contact searched yet."
-        st["hunter_limit_hit"] = True
-        return None
-    st["hunter"] = {"retrieved_at": res.get("retrieved_at"), "from_cache": res.get("from_cache"), "credits_used": res.get("credits_used")}
-    emails = (res.get("data") or {}).get("emails") or []
+def build_candidates(emails, domain):
     cands = []
     for e in emails:
         name = f"{e.get('first_name') or ''} {e.get('last_name') or ''}".strip()
@@ -606,10 +603,11 @@ def pick_contact(company, domain, st, usage):
                       "email_domain_matches_company": (e.get("value") or "").lower().endswith("@" + domain),
                       "source_links": [s.get("uri") for s in srcs if s.get("uri")][:5],
                       "email": e.get("value")})
-    st["hunter_candidates"] = cands
-    if not cands:
-        st["status"], st["reason"] = "NO_SUITABLE_CONTACT", "Hunter returned no named people for this domain."
-        return None
+    return cands
+
+def score_candidates(company, cands, usage):
+    """AI scores each Hunter candidate 0-2 on five criteria; CODE clamps, adds up, applies the pass rule and the role order.
+    Returns (scored, chosen_contact_or_None)."""
     hide = ("email", "first_name", "source_links")
     out = gemini_json(R.contacts_prompt(company, [{k: v for k, v in c.items() if k not in hide} for c in cands]), usage)
     ranked, scored = [], []
@@ -628,18 +626,37 @@ def pick_contact(company, domain, st, usage):
         scored.append(rec)
         if ok:
             ranked.append((R.ROLE_PREFERENCE.index(role), -total, -(cands[i].get("confidence") or 0), i, rec))
-    st["contact_scores"] = scored
     if not ranked:
-        st["status"], st["reason"] = "NO_SUITABLE_CONTACT", "No Hunter candidate scored 8/10 or more with company link and role ownership."
-        return None
+        return scored, None
     ranked.sort(key=lambda t: t[:4])
     rec = ranked[0][4]
     c = dict(cands[rec["index"]])
     c.update(score=rec["total"], scores=rec["scores"], role_category=rec["role_category"], reasoning=rec["reasoning"],
-             email_verified=(c.get("verification") == "valid"))
+             email_verified=(c.get("verification") == "valid"), index=rec["index"])
     c["why"] = (f"{c['name']}, {c.get('position')}: contact score {rec['total']}/10. Picked as the {ROLE_LABEL[rec['role_category']]}"
                 f" with the best score among {len([s for s in scored if s['pass']])} passing of {len(cands)} candidates.")
-    return c
+    return scored, c
+
+def pick_contact(company, domain, st, usage):
+    try:
+        res = hunter_domain_search(domain)
+    except HunterPaused as e:
+        st["status"] = "CONTACT_LOOKUP_PAUSED"
+        st["reason"] = f"Contact lookup paused: {e}. Qualified, but no contact searched yet."
+        st["hunter_limit_hit"] = True
+        return None
+    st["hunter"] = {"retrieved_at": res.get("retrieved_at"), "from_cache": res.get("from_cache"), "credits_used": res.get("credits_used")}
+    cands = build_candidates((res.get("data") or {}).get("emails") or [], domain)
+    st["hunter_candidates"] = cands
+    if not cands:
+        st["status"], st["reason"] = "NO_SUITABLE_CONTACT", "Hunter returned no named people for this domain."
+        return None
+    scored, chosen = score_candidates(company, cands, usage)
+    st["contact_scores"] = scored
+    if not chosen:
+        st["status"], st["reason"] = "NO_SUITABLE_CONTACT", "No Hunter candidate scored 8/10 or more with company link and role ownership."
+        return None
+    return chosen
 
 # ====================================================================== pain points + email
 MAX_PAIN = {"account_specific_evidence": 3, "relevance_to_person": 2, "plausible_business_consequence": 2,
@@ -697,7 +714,7 @@ def code_checks(draft, contact, hyp, ev_text):
     if contact["first_name"].lower() not in body[:80].lower():
         problems.append("it must greet the person by first name at the start")
     low = (subj + " " + body).lower()
-    for rx in BANNED:
+    for rx in R.BANNED_PATTERNS:
         if re.search(rx, low):
             problems.append(f"remove the phrase matching '{rx}'")
     loose = numbers(body) - numbers(ev_text)
@@ -721,7 +738,7 @@ def write_email(facts, ver, contact, hyp, st, usage):
         qs = {k: clamp((qa.get("scores") or {}).get(k), 0, 2) for k in ("specific_hook", "useful_hypothesis", "relevant_value", "simple_next_step", "clarity")}
         total = sum(qs.values())
         mand = qa.get("mandatory") or {}
-        mand_ok = bool(mand) and all(v is True for v in mand.values())
+        mand_ok = all(mand.get(k) is True for k in R.MANDATORY_CHECKS)     # a missing check counts as failed
         passed = total >= R.EMAIL_PASS_TOTAL and mand_ok and not problems
         attempts.append({"revision": rev, "words": words, "qa_total": total, "qa_scores": qs, "mandatory": mand,
                          "mandatory_ok": mand_ok, "code_problems": problems, "feedback": qa.get("feedback"), "passed": passed,
@@ -864,20 +881,12 @@ def write_summary(rows):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("domains_file")
-    ap.add_argument("--send-demo", action="store_true", help="after drafting, ask in the terminal, then send to DEMO_EMAIL only")
     args = ap.parse_args()
     domains = [x for x in (clean_domain(l) for l in open(args.domains_file, encoding="utf-8")) if x]
     if not domains:
         sys.exit("domains file has no domains. Add one per line.")
     rows = run_batch(domains)
     log(f"\nDone. {len(rows)} companies. Results: {os.path.join(OUT, 'summary.csv')}")
-    if args.send_demo:
-        import review
-        for st in rows:
-            if st["status"] == "DRAFT_READY":
-                log(f"\n===== {st['domain']} =====\nSubject: {st['draft']['subject']}\n\n{st['draft']['body']}\n")
-                if input("Approve and send to the demo address? [y/N] ").strip().lower() == "y":
-                    log(review.approve(st["domain"], st["draft"]["subject"], st["draft"]["body"], via="terminal")["review"]["send_status"])
 
 if __name__ == "__main__":
     main()

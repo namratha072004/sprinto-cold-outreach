@@ -90,3 +90,14 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; }
 .kv .k { color: var(--text-muted); }
 @media (max-width: 860px) { .desk { grid-template-columns: 1fr; } .left { max-height: 45vh; border-right: 0; border-bottom: 1px solid var(--border); } }
+
+/* review desk additions (colours come from theme.css only) */
+.lab { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid; margin-right: 6px; }
+.newsrow { padding: 10px 0; border-top: 1px solid var(--border); }
+.newsrow:first-child { border-top: 0; }
+.newsrow .h { font-weight: 600; }
+.note { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13.5px; margin-top: 10px; }
+.gmailnote { margin-top: 10px; font-size: 13.5px; }
+.btn.on { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-border); }
+[hidden] { display: none !important; }
+.draft textarea { overflow: hidden; }

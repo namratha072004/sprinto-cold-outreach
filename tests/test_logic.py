@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import settings as S
 TMP = tempfile.mkdtemp()
 S.OUT, S.CACHE = TMP, os.path.join(TMP, "cache")
-import pipeline as P, rubric as R, review, mailer, metrics
+import pipeline as P, rubric as R
 P.OUT = TMP
 
 HOME = ("Acme Cloud | Acme is a cloud software platform for logistics teams. Our SaaS product stores customer data in AWS. "
@@ -92,7 +92,7 @@ def fake_gemini(prompt, usage):
         return {"scores": {"specific_hook": 2, "useful_hypothesis": 2, "relevant_value": 2, "simple_next_step": 2, "clarity": 2},
                 "mandatory": {k: True for k in ["correct_person_and_company", "evidence_for_every_factual_claim", "hypothesis_phrased_tentatively",
                               "no_invented_metrics_relationships_urgency_guarantees", "no_false_re_or_following_up", "no_unsupported_compliance_deficiency",
-                              "addressed_by_name", "one_primary_pain"]}, "feedback": ""}
+                              "addressed_by_name", "one_primary_pain", "no_generic_praise_jargon_or_fake_familiarity"]}, "feedback": ""}
     raise AssertionError("unexpected prompt " + t)
 
 class Base(unittest.TestCase):
@@ -161,9 +161,17 @@ class TestVerification(Base):
         raw["dimensions"]["reason_now"] = {"level": 2, "state": "positive", "reasoning": "", "evidence": [ev("https://news.example/acme-b", "Acme raises Series B to expand enterprise logistics", "2024-01-05")]}
         with mock.patch.object(P, "gemini_json", return_value=raw):
             self.assertEqual(P.assess("acme.test", sources, {})["dimensions"]["reason_now"]["level"], 0)
-        raw["dimensions"]["reason_now"]["evidence"][0]["dated"] = None
+        raw = good_assessment()                                     # fresh input: assess() edits the object it is given
+        raw["dimensions"]["reason_now"] = {"level": 2, "state": "positive", "reasoning": "", "evidence": [ev("https://news.example/acme-b", "Acme raises Series B to expand enterprise logistics", None)]}
         with mock.patch.object(P, "gemini_json", return_value=raw):
             self.assertEqual(P.assess("acme.test", sources, {})["dimensions"]["reason_now"]["level"], 0)
+    def test_zero_score_keeps_no_supporting_evidence(self):
+        sources = {"https://acme.test/": HOME, "https://news.example/acme-b": NEWS_FUNDING}
+        raw = good_assessment()
+        raw["dimensions"]["reason_now"] = {"level": 0, "state": "missing", "reasoning": "", "evidence": [ev("https://acme.test/", "Acme is a cloud software platform for logistics teams")]}
+        with mock.patch.object(P, "gemini_json", return_value=raw):
+            a = P.assess("acme.test", sources, {})
+        self.assertEqual(a["dimensions"]["reason_now"]["evidence"], [])
     def test_unproven_disqualifier_is_ignored(self):
         raw = good_assessment(business_model="not_saas", is_unrelated_business=True)
         with mock.patch.object(P, "gemini_json", return_value=raw):
@@ -234,20 +242,6 @@ class TestEmailChecks(Base):
         _, problems = P.code_checks({"subject": "SOC 2", "body": body}, self.C, {}, "")
         self.assertEqual(problems, [])
 
-class TestMailer(Base):
-    def test_only_demo_address_no_cc_bcc(self):
-        smtp = mock.MagicMock(); smtp.__enter__.return_value = smtp
-        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": "abcd efgh ijkl mnop", "GMAIL_ADDRESS": "sender@example.test"}), mock.patch.object(mailer.smtplib, "SMTP_SSL", return_value=smtp):
-            mailer.send_demo("s", "b")
-        msg = smtp.send_message.call_args[0][0]
-        self.assertEqual(msg["To"], "demo@example.test"); self.assertIsNone(msg["Cc"]); self.assertIsNone(msg["Bcc"])
-        self.assertEqual(smtp.send_message.call_args[1]["to_addrs"], ["demo@example.test"])
-        smtp.login.assert_called_with("sender@example.test", "abcdefghijklmnop")   # sender account differs; recipient is still the demo address
-    def test_no_password_means_not_sent(self):
-        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": ""}), mock.patch.object(S, "_ENV", {}):
-            with self.assertRaises(mailer.MailerNotConfigured):
-                mailer.send_demo("s", "b")
-
 class TestEndToEnd(Base):
     def run_e2e(self):
         fake_r, _ = TestHunter._get(self, )
@@ -265,26 +259,6 @@ class TestEndToEnd(Base):
         self.assertTrue(os.path.exists(S.state_path("acme.test")))
         # nothing was sent: no review yet
         self.assertNotIn("decision", st.get("review", {}))
-    def test_approve_without_gmail_credentials_saves_but_does_not_send(self):
-        self.run_e2e()
-        d = S.read_state("acme.test")["draft"]
-        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": ""}), mock.patch.object(S, "_ENV", {}):
-            st = review.approve("acme.test", d["subject"], d["body"] + " edited")
-        self.assertEqual(st["review"]["send_status"], "NOT_SENT"); self.assertTrue(st["review"]["edited"])
-        self.assertEqual(review.view_status(st)["key"], "APPROVED_NOT_SENT")
-        with self.assertRaises(ValueError):                       # cannot approve twice
-            review.approve("acme.test", d["subject"], d["body"])
-    def test_approve_sends_once(self):
-        self.run_e2e()
-        d = S.read_state("acme.test")["draft"]
-        smtp = mock.MagicMock(); smtp.__enter__.return_value = smtp
-        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": "pw"}), mock.patch.object(mailer.smtplib, "SMTP_SSL", return_value=smtp):
-            st = review.approve("acme.test", d["subject"], d["body"])
-            review.retry_send("acme.test")
-        self.assertEqual(st["review"]["send_status"], "SENT"); self.assertEqual(smtp.send_message.call_count, 1)
-        sent = smtp.send_message.call_args[0][0]
-        self.assertTrue(sent["Subject"].startswith("[DEMO] ")); self.assertIn("priya@acme.test", sent.get_content())  # research data only in the body
-        self.assertEqual(sent["To"], "demo@example.test")
     def test_blocked_homepage_is_retrieval_failure_not_poor_fit(self):
         with mock.patch.object(P, "http_get", fake_http), mock.patch.object(P, "gemini_json", side_effect=fake_gemini):
             st = P.run_domain("blocked.test")
@@ -300,15 +274,28 @@ class TestEndToEnd(Base):
         with mock.patch.object(P, "http_get", http), mock.patch.object(P.requests, "get", fake_r), mock.patch.object(P, "gemini_json", side_effect=boom):
             rows = P.run_batch(["boom.test", "acme.test"])
         self.assertEqual([r["status"] for r in rows], ["ERROR", "DRAFT_READY"])
-    def test_metrics_after_review(self):
-        self.run_e2e()
-        d = S.read_state("acme.test")["draft"]
-        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": ""}), mock.patch.object(S, "_ENV", {}):
-            review.mark_opened("acme.test"); review.approve("acme.test", d["subject"], d["body"])
-        review.contact_feedback("acme.test", True)
-        m = metrics.compute()
-        self.assertEqual(m["drafts_reviewed"], 1); self.assertEqual(m["rewrite_rate_pct"], 0.0)
-        self.assertEqual(m["contact_accuracy_pct"], 100.0); self.assertFalse(m["kill_checks"]["enough_data"])
+class TestMandatoryChecks(Base):
+    def test_missing_mandatory_check_fails_the_draft(self):
+        """PDF section 7: ALL mandatory checks must be true. A check the reviewer did not answer counts as failed."""
+        def gem(prompt, usage):
+            out = fake_gemini(prompt, usage)
+            if prompt.startswith("TASK=QA"): out["mandatory"].pop("no_generic_praise_jargon_or_fake_familiarity")
+            return out
+        st = {}
+        contact = {"first_name": "Priya", "name": "Priya Rao", "position": "Head of Security"}
+        hyp = fake_gemini("TASK=PAIN", {})["hypotheses"][0]
+        facts = {"company_name": "Acme", "evidence_text": "We are preparing for SOC 2 Type II and run continuous control monitoring across our cloud."}
+        with mock.patch.object(P, "gemini_json", side_effect=gem):
+            draft, total = P.write_email(facts, P.Verifier({}), contact, hyp, st, {})
+        self.assertIsNone(draft); self.assertEqual(st["status"], "EMAIL_QA_FAILED")
+    def test_unsupported_product_claims_are_flagged(self):
+        R.BANNED_PATTERNS = [r"\bre:", r"real[- ]?time", r"\bintegrat"]
+        try:
+            _, problems = P.code_checks({"subject": "s", "body": "Hi Priya, " + "word " * 90 + "It monitors in real-time and integrates with AWS. Is that useful?"},
+                                         {"first_name": "Priya"}, {}, "")
+        finally:
+            import importlib; importlib.reload(R)
+        self.assertTrue(any("real" in p for p in problems))
 
 class TestFetchRules(Base):
     def test_never_linkedin_or_login(self):
@@ -325,57 +312,3 @@ class TestFetchRules(Base):
 if __name__ == "__main__":
     unittest.main()
 
-
-class TestHostedSteps(Base):
-    """Hosted mode: no background thread, no files. The browser drives research -> contact one request at a time.
-    A dict stands in for the Neon table here; the real SQL is tested against the real database."""
-    def setUp(self):
-        super().setUp()
-        self.db = {}
-        self.ps = [mock.patch.object(S, "HOSTED", True),
-                   mock.patch.object(S, "kv_get", lambda k, key: json.loads(json.dumps(self.db.get((k, key))))),
-                   mock.patch.object(S, "kv_put", lambda k, key, o: self.db.__setitem__((k, key), json.loads(json.dumps(o, default=str)))),
-                   mock.patch.object(S, "kv_list", lambda k: [v for (kk, _), v in sorted(self.db.items()) if kk == k]),
-                   mock.patch.object(P, "http_get", fake_http), mock.patch.object(P, "gemini_json", side_effect=fake_gemini)]
-        fake_r, self.calls = TestHunter._get(TestHunter())
-        self.ps.append(mock.patch.object(P.requests, "get", fake_r))
-        for p in self.ps: p.start()
-        import app as A
-        self.c = A.app.test_client()
-    def tearDown(self):
-        for p in self.ps: p.stop()
-        super().tearDown()
-    def post(self, path, body): return self.c.post(path, json=body)
-    def test_two_step_run_and_counters_survive_requests(self):
-        r = self.post("/api/run", {"domains": "acme.test"}).get_json()
-        rid = r["run_id"]
-        self.assertEqual(self.c.get("/api/companies").get_json()[0]["key"], "QUEUED")
-        s1 = self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"}).get_json()
-        self.assertEqual(s1["stage"], "finding_contact")
-        self.assertEqual(self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"}).status_code, 400)   # not queued any more
-        s2 = self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "contact"}).get_json()
-        self.assertEqual(s2["key"], "DRAFT_READY")
-        self.assertEqual(self.db[("meta", f"hunter_run_{rid}")]["calls"], 1)        # counter saved between requests
-        self.assertEqual(self.db[("meta", "hunter_total")]["calls"], 1)
-        self.assertIn("sources", [k for k, _ in self.db])
-        self.assertEqual(self.c.get("/api/company/acme.test").get_json()["contact"]["name"], "Priya Rao")
-    def test_total_cap_protects_credits_on_public_site(self):
-        self.db[("meta", "hunter_total")] = {"calls": 10}
-        rid = self.post("/api/run", {"domains": "acme.test"}).get_json()["run_id"]
-        self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"})
-        out = self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "contact"}).get_json()
-        self.assertEqual(out["key"], "CONTACT_LOOKUP_PAUSED")
-        self.assertEqual(len([u for u in self.calls if "domain-search" in u]), 0)   # no credit spent
-    def test_json_only_and_approve_flow(self):
-        self.assertEqual(self.c.post("/api/run", data="domains=x").status_code, 415)
-        rid = self.post("/api/run", {"domains": "acme.test"}).get_json()["run_id"]
-        self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "research"})
-        self.post("/api/step", {"domain": "acme.test", "run_id": rid, "step": "contact"})
-        d = self.c.get("/api/company/acme.test").get_json()["draft"]
-        smtp = mock.MagicMock(); smtp.__enter__.return_value = smtp
-        with mock.patch.dict(os.environ, {"GMAIL_APP_PASSWORD": "pw"}), mock.patch.object(mailer.smtplib, "SMTP_SSL", return_value=smtp):
-            out = self.post("/api/company/acme.test/approve", {"subject": d["subject"], "body": d["body"]}).get_json()
-        self.assertEqual(out["view"]["key"], "SENT"); self.assertEqual(smtp.send_message.call_args[1]["to_addrs"], ["demo@example.test"])
-    def test_interrupted_run_is_labelled(self):
-        self.db[("state", "slow.test")] = {"domain": "slow.test", "status": "STARTED", "stage": "reading_website", "updated_at": "2020-01-01T00:00:00"}
-        self.assertEqual(self.c.get("/api/companies").get_json()[0]["key"], "STALE")
