@@ -77,6 +77,20 @@ def edit(cid, subject, body):
         db.x("UPDATE emails SET gmail_draft_error=%s WHERE id=%s", (str(err)[:400], e["id"]))
         return str(err)[:400]
 
+def gmail_sync(email):
+    """Does the Gmail draft still match what this page shows? status: match | changed | missing | error (a read-only check)."""
+    if not email or not email.get("gmail_draft_id"):
+        return {"status": "none"}
+    try:
+        g = gmail_drafts.get_draft(email["gmail_draft_id"])
+    except Exception as e:
+        return {"status": "error", "detail": str(e)[:160]}
+    if g is None:
+        return {"status": "missing"}
+    norm = lambda t: "\n".join(l.rstrip() for l in (t or "").replace("\r\n", "\n").strip().splitlines())
+    same = g["subject"].strip() == (email["subject"] or "").strip() and norm(g["body"]) == norm(email["body"])
+    return {"status": "match" if same else "changed", "gmail_subject": g["subject"]}
+
 def contact_feedback(cid, correct):
     """The Growth Lead's verdict on the chosen contact (feeds the contact-accuracy metric)."""
     n = db.x("UPDATE contacts SET contact_correct=%s WHERE company_id=%s AND chosen", (bool(correct), cid))

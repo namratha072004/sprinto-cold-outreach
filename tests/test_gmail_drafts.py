@@ -68,7 +68,7 @@ class TestNoSendPath(unittest.TestCase):
     def test_only_draft_endpoints_are_used(self):
         base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         src = open(os.path.join(base, "gmail_drafts.py"), encoding="utf-8").read()
-        self.assertEqual(sorted(set(re.findall(r'"(POST|PUT|GET|DELETE|PATCH)"', src))), ["POST", "PUT"])
+        self.assertEqual(sorted(set(re.findall(r'"(POST|PUT|GET|DELETE|PATCH)"', src))), ["GET", "POST", "PUT"])   # GET = read a draft back; no DELETE, no PATCH, no send
         self.assertNotIn("/send", src)
 
 if __name__ == "__main__":

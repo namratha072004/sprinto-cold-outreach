@@ -176,6 +176,7 @@ def company(cid):
             x["email"] = mask(x["email"])
     if email:
         email["gmail_open_url"] = (f"https://mail.google.com/mail/u/0/#drafts?compose={email['gmail_message_id']}" if email.get("gmail_message_id") else "https://mail.google.com/mail/u/0/#drafts")
+    sync = review.gmail_sync(email) if email and not email.get("gmail_draft_error") else {"status": "none"}
     return jsonify({
         "can_edit": True,
         "company": {k: c[k] for k in ("id", "domain", "name", "status", "stage", "funding_stage", "funding_date", "total_score", "gates", "flags", "reason", "escalation_reason",
@@ -186,7 +187,7 @@ def company(cid):
         "rounds": db.q("SELECT round_no, gap, sources, new_evidence, revised_decision FROM research_rounds WHERE company_id=%s ORDER BY round_no", (cid,)),
         "contacts": contacts,
         "pain": db.q("SELECT position, observed_fact, evidence_url, evidence_excerpt, hypothesis, role_relevance, possible_consequence, capability, total FROM pain_hypotheses WHERE company_id=%s ORDER BY position", (cid,)),
-        "email": email, "email_attempts": attempts,
+        "email": email, "email_attempts": attempts, "gmail_sync": sync,
         "found_via": db.q("SELECT headline, source_name, source_url, published_at, query, outcome_note, domain_evidence FROM discovery_results WHERE company_id=%s OR (company_domain=%s AND %s IS NOT NULL) ORDER BY id DESC LIMIT 3", (cid, c["domain"], c["domain"])),
         "words": [80, 120], "gmail_drafts_url": "https://mail.google.com/mail/u/0/#drafts"})
 

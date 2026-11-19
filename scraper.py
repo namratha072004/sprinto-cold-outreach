@@ -116,9 +116,32 @@ def fetch_page(url):
         from urllib.parse import urljoin
         res["links"] = [[urljoin(r.url, a["href"]), a.get_text(" ", strip=True)[:80]] for a in soup.find_all("a", href=True)][:300]
         res["text"], res["site_name"] = P.extract_text(r.text)
+        if url.endswith("sitemap.xml"):
+            res["text"] = r.text[:400000]                  # raw XML: the sitemap parser needs the tags
     if label in ("ok", "blocked", "not_found"):                       # transient failures are not cached: they may work later
         cache_put(url, label, res["text"], res["links"], attempts)
     return res
+
+# ---------------------------------------------------------------- sitemap (the site's own list of pages; robots.txt obeyed)
+def parse_sitemap(xml_text, host, limit=800):
+    """Same-site page URLs from a sitemap.xml. A sitemap INDEX (a list of sitemaps) is not followed: one small file only."""
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return []
+    out = []
+    for el in root.iter():
+        if el.tag.endswith("}loc") or el.tag == "loc":
+            u = (el.text or "").strip()
+            if u.startswith("http") and P.host_matches(urlparse(u).netloc, host) and not u.endswith(".xml"):
+                out.append(u)
+        if len(out) >= limit:
+            break
+    return out
+
+def sitemap_urls(domain):
+    p = fetch_page(f"https://{domain}/sitemap.xml")
+    return parse_sitemap(p.get("raw") or p["text"], domain) if p["status"] == "ok" else []
 
 # ---------------------------------------------------------------- Google News (RSS)
 def parse_rss(xml_text, max_items=10):

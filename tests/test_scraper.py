@@ -139,3 +139,22 @@ class TestSprintoContext(unittest.TestCase):
         saved = R.SPRINTO_FACTS; R.SPRINTO_FACTS = ""
         try: self.assertIn("No Sprinto facts were supplied", R.draft_prompt(facts, contact, hyp, "S"))
         finally: R.SPRINTO_FACTS = saved
+
+
+class TestSitemapAndGmailCheck(unittest.TestCase):
+    XML = ('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://acme.test/security</loc></url><url><loc>https://acme.test/customers/deel</loc></url>'
+           '<url><loc>https://other.test/security</loc></url><url><loc>https://acme.test/sub.xml</loc></url></urlset>')
+    def test_sitemap_keeps_only_same_site_pages(self):
+        self.assertEqual(scraper.parse_sitemap(self.XML, "acme.test"), ["https://acme.test/security", "https://acme.test/customers/deel"])
+    def test_bad_xml_gives_nothing(self):
+        self.assertEqual(scraper.parse_sitemap("<nope", "acme.test"), [])
+    def test_gmail_sync_detects_match_change_and_missing(self):
+        import review
+        email = {"gmail_draft_id": "d1", "subject": "Subj", "body": "Hi Pat,\n\nText."}
+        with mock.patch.object(review.gmail_drafts, "get_draft", return_value={"subject": "Subj", "to": "x", "body": "Hi Pat,\r\n\r\nText.\r\n"}):
+            self.assertEqual(review.gmail_sync(email)["status"], "match")
+        with mock.patch.object(review.gmail_drafts, "get_draft", return_value={"subject": "", "to": "x", "body": "Hi Pat,\n\nText."}):
+            r = review.gmail_sync(email); self.assertEqual((r["status"], r["gmail_subject"]), ("changed", ""))
+        with mock.patch.object(review.gmail_drafts, "get_draft", return_value=None):
+            self.assertEqual(review.gmail_sync(email)["status"], "missing")
+        self.assertEqual(review.gmail_sync({"gmail_draft_id": None})["status"], "none")

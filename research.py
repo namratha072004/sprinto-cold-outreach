@@ -86,6 +86,22 @@ def research_company(run_id, domain, cid=None):
                 news_pub[it["link"]] = it["published"]
             log(run_id, cid, "google_news_read", {"items": len(news_items), "from_cache": ninfo["from_cache"], "attempts": ninfo["attempts"],
                                                   "note": "Google News RSS read by the Growth Lead's decision (Google's robots.txt does not allow it)"})
+            hl = db.one("SELECT headline, source_url, published_at, source_name FROM discovery_results WHERE company_id=%s ORDER BY id LIMIT 1", (cid,))
+            if hl:                                                 # the news story that found this company is a dated source about it
+                sources[hl["source_url"]] = f"{hl['published_at'] or 'date unknown'} | {hl['headline']} | publisher: {hl['source_name'] or 'unknown'}"
+                retrieved[hl["source_url"]] = S.today(); news_pub[hl["source_url"]] = str(hl["published_at"]) if hl["published_at"] else None
+            # a homepage that does not link its security/customers/product pages: look them up in the site's own sitemap before guessing paths
+            if any(c.get("guessed") for c in cands):
+                have = {c["type"] for c in cands if not c.get("guessed")}
+                extra = []
+                for u in scraper.sitemap_urls(domain):
+                    t = P.classify(u, "")
+                    if t and t not in have and P.fetch_allowed(u):
+                        extra.append({"url": u, "type": t, "from_sitemap": True}); have.add(t)
+                if extra:
+                    got = {e["type"] for e in extra}
+                    cands = [c for c in cands if not (c.get("guessed") and c["type"] in got)] + extra
+                    log(run_id, cid, "sitemap_used", {"pages": [e["url"] for e in extra]})
             first = P.pick_pages(cands, fetched, ["security", "customers", "product"], R.INITIAL_EXTRA_PAGES)
             for c in first:
                 read(c, 0)

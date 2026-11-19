@@ -64,6 +64,22 @@ def create_or_replace(subject, body, existing_id=None):
         _fail(r)
     return r.json()["id"], "created", (r.json().get("message") or {}).get("id")
 
+def get_draft(draft_id):
+    """Reads one draft back from Gmail. Returns {'subject','to','body'} or None if it no longer exists. Read-only."""
+    r = _call("GET", f"{API}/{draft_id}?format=full", None)
+    if r.status_code == 404:
+        return None
+    if r.status_code != 200:
+        _fail(r)
+    m = r.json()["message"]
+    hdr = {h["name"].lower(): h["value"] for h in m["payload"].get("headers", [])}
+    part = m["payload"]
+    while "parts" in part and part["parts"] and not part.get("body", {}).get("data"):
+        part = next((p for p in part["parts"] if p.get("mimeType", "").startswith("text/plain")), part["parts"][0])
+    data = part.get("body", {}).get("data", "")
+    body = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4)).decode("utf-8", "replace") if data else ""
+    return {"subject": hdr.get("subject", ""), "to": hdr.get("to", ""), "body": body}
+
 def _fail(r):
     try:
         msg = r.json().get("error", {}).get("message", r.text[:200])

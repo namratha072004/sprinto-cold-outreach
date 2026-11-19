@@ -186,7 +186,10 @@ function trail(d) {
 }
 function draftPanel(d) {
   const e = d.email, dec = e.review_decision, off = needCode();
-  const note = e.gmail_draft_error ? `<div class="note warn"><b>Not in Gmail Drafts.</b> ${esc(e.gmail_draft_error)} <button class="btn sm" id="b-restore" ${off}>Try again</button></div>`
+  const sy = (d.gmail_sync || {}).status;
+  const note = sy === "missing" ? `<div class="note warn"><b>The Gmail draft is gone.</b> It was deleted in Gmail. <button class="btn sm" id="b-restore">Recreate in Gmail</button></div>`
+    : sy === "changed" ? `<div class="note warn"><b>The Gmail draft was changed in Gmail.</b> It no longer matches this page${(d.gmail_sync.gmail_subject || "") === "" ? " (its subject line is empty)" : ""}. <button class="btn sm" id="b-restore">Make Gmail match this page</button></div>`
+    : e.gmail_draft_error ? `<div class="note warn"><b>Not in Gmail Drafts.</b> ${esc(e.gmail_draft_error)} <button class="btn sm" id="b-restore" ${off}>Try again</button></div>`
     : e.gmail_draft_id ? `<div class="gmailnote">✓ Also in your <a href="${esc(e.gmail_open_url)}" target="_blank" rel="noopener noreferrer">Gmail draft</a> (same subject and text). Send it from Gmail yourself. <button class="btn sm" id="b-restore" ${off} title="If you removed the draft from Gmail, this makes it again from this page.">Recreate in Gmail</button></div>`
     : `<div class="note warn">No Gmail draft exists for this company yet. <button class="btn sm" id="b-restore" ${off}>Create it in Gmail</button></div>`;
   return `<div class="card draft" id="draft" style="margin-top:14px"><h3>Draft email · ${esc(({ pending: "to review", edited: "edited by you", approved: "approved", done: "done", rejected: "rejected" })[dec] || dec)}</h3>
