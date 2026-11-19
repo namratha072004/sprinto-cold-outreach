@@ -1,23 +1,23 @@
 <!doctype html>
-<html lang="en" data-mode="light" data-palette="aurora">
+<html lang="en" data-mode="light" data-palette="violet">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Funding Outreach</title>
+  <title>Sprinto Outreach Desk</title>
   <script>/* apply the saved palette and mode before the page paints (no flash) */
     try { var d = document.documentElement, m = localStorage.getItem("mode") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-          d.dataset.mode = m; d.dataset.palette = localStorage.getItem("palette") || "aurora"; } catch (e) {}</script>
+          d.dataset.mode = m; var p = localStorage.getItem("palette"); d.dataset.palette = ["violet","emerald","ocean","midnight","clay","orchid"].indexOf(p) >= 0 ? p : "violet"; } catch (e) {}</script>
   <link rel="stylesheet" href="/static/theme.css">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="#/today">Funding Outreach</a>
+    <a class="brand" href="#/today">Sprinto Outreach Desk</a>
     <span class="sp"></span>
     <span class="small muted" id="status"><span class="dot"></span>Loading…</span>
-    <select class="sel small" id="palette" aria-label="Colour palette">
-      <option value="aurora">Palette: Aurora</option><option value="green">Palette: Green</option><option value="slate">Palette: Slate blue</option>
-      <option value="indigo">Palette: Indigo</option><option value="terracotta">Palette: Terracotta</option><option value="plum">Palette: Plum</option></select>
+    <select class="sel small" id="palette" aria-label="Colour scheme">
+      <option value="violet">Colours: Violet</option><option value="emerald">Colours: Emerald</option><option value="ocean">Colours: Ocean</option>
+      <option value="midnight">Colours: Midnight</option><option value="clay">Colours: Clay</option><option value="orchid">Colours: Orchid</option></select>
     <button class="btn sm" id="mode">Dark mode</button>
   </header>
   <div class="shell">

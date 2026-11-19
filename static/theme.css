@@ -22,15 +22,15 @@
 }
 
 /* palettes: accent, accent 2 (for the gradient) */
-:root, [data-palette="aurora"]     { --accent: #6d5bf0; --accent-2: #4f8dff; --focus: #6d5bf0; }
-[data-palette="green"]             { --accent: #19935a; --accent-2: #36b37e; --focus: #19935a; }
-[data-palette="slate"]             { --accent: #3d5a80; --accent-2: #5b84b1; --focus: #3d5a80; }
-[data-palette="indigo"]            { --accent: #4338ca; --accent-2: #6366f1; --focus: #4338ca; }
-[data-palette="terracotta"]        { --accent: #c2603a; --accent-2: #e08a5c; --focus: #c2603a; }
-[data-palette="plum"]              { --accent: #8e3b8f; --accent-2: #c05fa8; --focus: #8e3b8f; }
-[data-mode="dark"][data-palette="aurora"]     { --accent: #9b8cff; --accent-2: #7aa7ff; }
-[data-mode="dark"][data-palette="green"]      { --accent: #4fd39a; --accent-2: #86e8bd; }
-[data-mode="dark"][data-palette="slate"]      { --accent: #8fb1dc; --accent-2: #b6cdea; }
-[data-mode="dark"][data-palette="indigo"]     { --accent: #8b87ff; --accent-2: #a5b4fc; }
-[data-mode="dark"][data-palette="terracotta"] { --accent: #f09a70; --accent-2: #f7b896; }
-[data-mode="dark"][data-palette="plum"]       { --accent: #d78bd8; --accent-2: #eea8d9; }
+:root, [data-palette="violet"]     { --accent: #6d5bf0; --accent-2: #4f8dff; --focus: #6d5bf0; }
+[data-palette="emerald"]             { --accent: #19935a; --accent-2: #36b37e; --focus: #19935a; }
+[data-palette="ocean"]             { --accent: #3d5a80; --accent-2: #5b84b1; --focus: #3d5a80; }
+[data-palette="midnight"]            { --accent: #4338ca; --accent-2: #6366f1; --focus: #4338ca; }
+[data-palette="clay"]        { --accent: #c2603a; --accent-2: #e08a5c; --focus: #c2603a; }
+[data-palette="orchid"]              { --accent: #8e3b8f; --accent-2: #c05fa8; --focus: #8e3b8f; }
+[data-mode="dark"][data-palette="violet"]     { --accent: #9b8cff; --accent-2: #7aa7ff; }
+[data-mode="dark"][data-palette="emerald"]      { --accent: #4fd39a; --accent-2: #86e8bd; }
+[data-mode="dark"][data-palette="ocean"]      { --accent: #8fb1dc; --accent-2: #b6cdea; }
+[data-mode="dark"][data-palette="midnight"]     { --accent: #8b87ff; --accent-2: #a5b4fc; }
+[data-mode="dark"][data-palette="clay"] { --accent: #f09a70; --accent-2: #f7b896; }
+[data-mode="dark"][data-palette="orchid"]       { --accent: #d78bd8; --accent-2: #eea8d9; }

@@ -1,4 +1,4 @@
-// Funding Outreach desk. Shows only what is saved in Neon. Approve / Edit / Reject / Done only RECORD a decision: nothing here can send an email.
+// Sprinto outreach desk. Shows only what is saved in Neon. Approve / Edit / Reject / Done only RECORD a decision: nothing here can send an email.
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const link = (u, t) => /^https?:\/\//i.test(u || "") ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t || u)}</a>` : esc(u || "");
@@ -105,11 +105,11 @@ async function pageToday() {
   const p = await api("/api/run/progress"); S.progress = p.ok ? p.data : [];
   const sub = !run ? "No run yet. Press Run and I will search Google News, read the companies and write the drafts."
     : S.driving ? "A run is working through its shortlist right now."
-    : S.open.length ? `A run is unfinished: ${S.open.length} companies left.` : "Your latest run is done. Here is what it found.";
+    : S.open.length ? `A run is unfinished: ${S.open.length} companies left.` : "Your latest run has finished. This is the result.";
   $("#main").innerHTML = `<section class="hero"><div class="date">${esc(date)}</div><h1>${esc(greet)}, ${esc(S.me.name)}.</h1><div class="muted">${esc(sub)}</div>
-    <div class="stats"><div class="stat hot"><div class="num">${o ? o.to_review : 0}</div><div class="muted">drafts ready for you</div></div>
-      <div class="stat"><div class="num">${run ? run.skipped : 0}</div><div class="muted">companies skipped (did not fit)</div></div>
-      <div class="stat"><div class="num">${run ? run.articles : 0}</div><div class="muted">articles read from ${run ? run.sources : 0} searches</div></div></div>
+    <div class="stats"><div class="stat hot"><div class="num">${o ? o.to_review : 0}</div><div class="muted">drafts waiting for your review</div></div>
+      <div class="stat"><div class="num">${run ? run.skipped : 0}</div><div class="muted">companies set aside</div></div>
+      <div class="stat"><div class="num">${run ? run.articles : 0}</div><div class="muted">articles read across ${run ? run.sources : 0} searches</div></div></div>
     <div>${o && o.to_review ? `<a class="btn primary cta" href="#/drafts">Review ${o.to_review} draft${o.to_review > 1 ? "s" : ""} →</a> ` : ""}
       <button class="btn ${o && o.to_review ? "" : "primary"} cta" id="run-btn" ${S.driving ? "disabled" : ""}>${S.driving ? "Run in progress…" : run ? "Run again" : "Run now"}</button>
       ${S.open.length && !S.driving && S.me.can_edit ? `<button class="btn cta" id="resume-btn">Continue unfinished run (${S.open.length})</button>` : ""}</div>
@@ -138,7 +138,7 @@ async function pageDrafts(p) {
         <div class="sn">${esc(i.snippet)}</div>
         <div class="small">${decisionBadge(i.decision)} ${i.in_gmail ? `<span class="muted">✓ in Gmail</span>` : `<span class="badge t-warning">not in Gmail</span>`} <span class="muted tiny">${esc(ago(i.created_at))}</span></div></button>`).join("")}</div>
       <div class="detail" id="detail"></div></div>`
-    : `<div class="card empty"><h3>No drafts here</h3><div class="muted">New drafts appear after the next run.</div><div style="margin-top:14px"><a class="btn" href="#/runs">See last run</a></div></div>`}`;
+    : `<div class="card empty"><h3>Nothing in this list</h3><div class="muted">Drafts show up here once a run has produced them.</div><div style="margin-top:14px"><a class="btn" href="#/runs">See last run</a></div></div>`}`;
   document.querySelectorAll(".dcard").forEach(b => b.onclick = () => { S.sel = Number(b.dataset.id); document.querySelectorAll(".dcard").forEach(x => x.classList.toggle("on", x === b)); history.replaceState(null, "", `#/drafts?tab=${tab}${kind ? "&kind=" + kind : ""}&id=${S.sel}`); loadDetail(S.sel); });
   if (S.sel && d.items.length) loadDetail(S.sel);
 }
@@ -188,8 +188,8 @@ function trail(d) {
 function draftPanel(d) {
   const e = d.email, dec = e.review_decision, off = needCode();
   const note = e.gmail_draft_error ? `<div class="note warn"><b>Not in Gmail Drafts.</b> ${esc(e.gmail_draft_error)} <button class="btn sm" id="b-restore" ${off}>Try again</button></div>`
-    : e.gmail_draft_id ? `<div class="gmailnote">✓ Also in your <a href="${esc(e.gmail_open_url)}" target="_blank" rel="noopener noreferrer">Gmail draft</a> (same subject and text). Send it from Gmail yourself. <button class="btn sm" id="b-restore" ${off} title="Deleted it by accident? This puts it back.">Put it back in Gmail</button></div>`
-    : `<div class="note warn">There is no Gmail draft for this one yet. <button class="btn sm" id="b-restore" ${off}>Create it</button></div>`;
+    : e.gmail_draft_id ? `<div class="gmailnote">✓ Also in your <a href="${esc(e.gmail_open_url)}" target="_blank" rel="noopener noreferrer">Gmail draft</a> (same subject and text). Send it from Gmail yourself. <button class="btn sm" id="b-restore" ${off} title="If you removed the draft from Gmail, this makes it again from this page.">Recreate in Gmail</button></div>`
+    : `<div class="note warn">No Gmail draft exists for this company yet. <button class="btn sm" id="b-restore" ${off}>Create it in Gmail</button></div>`;
   return `<div class="card draft" id="draft" style="margin-top:14px"><h3>Draft email · ${esc(({ pending: "to review", edited: "edited by you", approved: "approved", done: "done", rejected: "rejected" })[dec] || dec)}</h3>
     <label for="subj">Subject</label><input type="text" id="subj" value="${esc(e.subject)}" readonly>
     <label for="body">Email</label><textarea id="body" readonly>${esc(e.body)}</textarea><div class="tiny muted wc" id="wc"></div>${note}
@@ -227,21 +227,21 @@ async function pageRejected(p) {
   const qs = new URLSearchParams({ ...(p.status ? { status: p.status } : {}), window: p.window || "all" }).toString();
   const r = await api(`/api/rejected?${qs}`); if (!r.ok) throw new Error("rejected"); const d = r.data;
   const opts = Object.entries(d.counts).map(([k, n]) => `<option value="${k}" ${p.status === k ? "selected" : ""}>${esc((STATUS_LABEL[k] || [k])[0])} (${n})</option>`).join("");
-  $("#main").innerHTML = `<h1 class="page-title">Rejected</h1><p class="page-sub">Companies that did not fit, with the reason. Overrule one if you disagree.</p>
+  $("#main").innerHTML = `<h1 class="page-title">Rejected</h1><p class="page-sub">Companies a run decided not to pursue, with the reason. If you disagree with a decision, overrule it.</p>
     <div class="grid2" style="max-width:560px;margin-bottom:18px"><label class="small muted">Why<select class="f" id="f-status"><option value="">Any</option>${opts}</select></label>
       <label class="small muted">Announced<select class="f" id="f-window"><option value="all">Any</option><option value="24h" ${p.window === "24h" ? "selected" : ""}>Last 24 hours</option><option value="7d" ${p.window === "7d" ? "selected" : ""}>Last 7 days</option></select></label></div>
     ${d.items.length ? d.items.map(i => `<div class="card" data-id="${i.id}"><div class="head"><div><b style="font-size:17px">${esc(i.name)}</b> ${badge(i.status)} <span class="muted small">${esc(i.domain || "website not confirmed")}${i.funding_stage ? " · " + esc(i.funding_stage) : ""}${i.announced ? " · announced " + esc(day(i.announced)) : ""}</span>
         <div style="margin-top:6px">${esc(i.reason || "")}</div>${i.headline ? `<div class="muted small" style="margin-top:4px">${link(i.source_url, i.headline)}${i.source ? " · " + esc(i.source) : ""}</div>` : ""}</div>
       <div style="text-align:right">${i.score != null ? `<div class="badge t-neutral">${i.score}/100</div>` : ""}<div style="margin-top:8px"><button class="btn sm" data-open="${i.id}">See why</button> ${i.overrule_allowed ? `<button class="btn sm" data-over="${i.id}" ${needCode()}>Overrule</button>` : ""}</div></div></div><div class="over" hidden></div></div>`).join("")
-      : `<div class="card empty"><h3>Nothing has been rejected yet</h3><div class="muted">Companies that do not fit appear here, with the reason.</div></div>`}`;
+      : `<div class="card empty"><h3>No rejections yet</h3><div class="muted">Companies a run decides not to pursue are listed here with the reason.</div></div>`}`;
   const f = () => go("rejected", { ...($("#f-status").value ? { status: $("#f-status").value } : {}), window: $("#f-window").value });
   $("#f-status").onchange = f; $("#f-window").onchange = f;
   document.querySelectorAll("[data-open]").forEach(a => a.onclick = () => openCompanyDialog(Number(a.dataset.open)));
   document.querySelectorAll("[data-over]").forEach(b => b.onclick = () => { const card = b.closest(".card"), box = $(".over", card); box.hidden = false;
-    box.innerHTML = `<div class="note"><b>Overrule moves this company to the review queue.</b> It uses one Hunter lookup and takes about two minutes. Why do you disagree? (optional)<textarea class="f" style="margin-top:8px;min-height:60px"></textarea><div class="actions"><button class="btn primary sm" id="go-over">Overrule and continue</button><button class="btn sm" id="no-over">Cancel</button></div></div>`;
+    box.innerHTML = `<div class="note"><b>Overruling sends this company on to a contact and an email draft.</b> It spends one Hunter lookup and takes about two minutes. Your reason (optional):<textarea class="f" style="margin-top:8px;min-height:60px"></textarea><div class="actions"><button class="btn primary sm" id="go-over">Overrule and continue</button><button class="btn sm" id="no-over">Cancel</button></div></div>`;
     $("#no-over", box).onclick = () => box.hidden = true;
     $("#go-over", box).onclick = async () => { $("#go-over", box).disabled = true; const r2 = await api(`/api/company/${b.dataset.over}/overrule`, { note: $("textarea", box).value }); if (!r2.ok) { fail(r2); return route(); }
-      toast("Overruled. Writing the draft now (about two minutes)…", 8000); await drive([Number(b.dataset.over)], 1); go("drafts", { id: b.dataset.over }); }; });
+      toast("Overruled. The draft is being written (about two minutes)…", 8000); await drive([Number(b.dataset.over)], 1); go("drafts", { id: b.dataset.over }); }; });
 }
 async function openCompanyDialog(id) { const dlg = $("#dlg"); dlg.innerHTML = `<div id="dlgbody"><div class="muted">Loading…</div></div><div class="actions"><button class="btn" onclick="document.getElementById('dlg').close()">Close</button></div>`; dlg.showModal(); await loadDetail(id, "#dlgbody"); }
 
@@ -251,13 +251,13 @@ async function pageSources(p) {
   const r = await api(`/api/sources?${qs}`); if (!r.ok) throw new Error("sources"); const d = r.data;
   if (!d.run) { $("#main").innerHTML = `<h1 class="page-title">Sources</h1><div class="card empty"><h3>No articles yet</h3><div class="muted">Press Run on the Today page.</div></div>`; return; }
   const BT = { drafted: "success", rejected: "neutral", researching: "warning", error: "danger", no_website: "warning", shortlisted: "warning" };
-  $("#main").innerHTML = `<h1 class="page-title">Sources</h1><p class="page-sub">Where the articles are read. Every article the latest run looked at, and what happened to it.</p>
+  $("#main").innerHTML = `<h1 class="page-title">Sources</h1><p class="page-sub">Every Google News article the latest run read, and what became of it.</p>
     <div class="card"><table><tr><th>Search (Google News)</th><th>Articles read</th><th>Named a company</th><th>What happened</th></tr>${d.feeds.map(f => `<tr><td>${esc(f.query)}</td><td>${f.articles}</td><td>${f.named}</td><td>${Object.entries(f.states).map(([k, n]) => `<span class="badge t-${BT[k] || "neutral"}" style="margin:2px">${esc((d.outcomes[k] || {}).label || k)} ${n}</span>`).join("")}</td></tr>`).join("")}</table></div>
     <p class="muted small">Google News is read through its public feed, gently (one request every 2 seconds, cached for a day). The AI reads every headline whether or not it looks like funding news.</p>
     <div class="grid2" style="max-width:640px;margin:14px 0"><label class="small muted">Search<select class="f" id="s-query"><option value="">All</option>${d.feeds.map(f => `<option value="${esc(f.query)}" ${p.query === f.query ? "selected" : ""}>${esc(f.query.slice(0, 60))}</option>`).join("")}</select></label>
       <label class="small muted">What happened<select class="f" id="s-state"><option value="">All</option>${Object.entries(d.outcomes).map(([k, o]) => `<option value="${k}" ${p.state === k ? "selected" : ""}>${esc(o.label)} (${o.count})</option>`).join("")}</select></label></div>
     <div class="card" style="padding:6px 14px">${d.items.length ? `<table><tr><th>Article</th><th>Published</th><th>Company</th><th>Website</th><th>What happened</th></tr>${d.items.map(i => `<tr><td>${link(i.source_url, i.headline)}<div class="tiny muted">${esc(i.source_name || "")}</div></td><td>${esc(day(i.published_at))}</td><td>${esc(i.company_name || "–")}</td>
-      <td>${i.domain_status === "confirmed" ? esc(i.company_domain) : "<span class='muted'>unknown</span>"}</td><td><span class="badge t-${BT[i.state] || "neutral"}">${esc(i.state_label)}</span>${i.outcome_note ? `<div class="tiny muted">${esc(i.outcome_note)}</div>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty"><h3>No articles match these filters</h3><div class="muted">Change a filter to see more.</div></div>`}</div>
+      <td>${i.domain_status === "confirmed" ? esc(i.company_domain) : "<span class='muted'>unknown</span>"}</td><td><span class="badge t-${BT[i.state] || "neutral"}">${esc(i.state_label)}</span>${i.outcome_note ? `<div class="tiny muted">${esc(i.outcome_note)}</div>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty"><h3>No articles for this filter</h3><div class="muted">Try a different filter.</div></div>`}</div>
     <p class="muted small">Showing ${d.shown} of ${d.total} articles in this run.</p>`;
   const f = () => go("sources", { ...($("#s-query").value ? { query: $("#s-query").value } : {}), ...($("#s-state").value ? { state: $("#s-state").value } : {}) });
   $("#s-query").onchange = f; $("#s-state").onchange = f;
@@ -290,11 +290,11 @@ async function pageRuns() {
 async function pageSettings() {
   const r = await api("/api/settings"); if (!r.ok) throw new Error("settings"); const d = r.data; let kw = [...d.shortlist.signal_keywords];
   const num = (grp, key, o) => `<div class="rowform"><label for="${grp}-${key}">${esc(o.label)}</label><input type="number" class="f" id="${grp}-${key}" data-g="${grp}" data-k="${key}" value="${o.value}" min="${o.min}" max="${o.max}" step="any" ${needCode()}></div>`;
-  $("#main").innerHTML = `<h1 class="page-title">Settings</h1><p class="page-sub">How startups are scored and shortlisted. You own the rubric. Every save makes a new version, and it applies from the next run. Current: <b>${esc(d.version)}</b></p>
+  $("#main").innerHTML = `<h1 class="page-title">Settings</h1><p class="page-sub">The scoring rubric and shortlist rules, which you own. Each save is stored as a new version and takes effect on the next run. Current: <b>${esc(d.version)}</b></p>
     ${S.me.can_edit ? "" : `<div class="note warn">Viewing only. Changing settings needs the access code (Account page).</div>`}
-    <div class="card"><h3>Five checks. Each has a weight. Together they make the 100 points.</h3>${d.weights.map(w => `<div class="rowform"><label for="w-${w.key}">${esc(w.label)}</label><input type="number" class="f" id="w-${w.key}" data-w="${w.key}" value="${w.weight}" min="0" max="100" ${needCode()}></div>`).join("")}<div class="rowform"><b>Total</b><b id="wtotal"></b></div></div>
-    <div class="card"><h3>Scores needed</h3><div class="small muted">A company at or above the score is researched further and drafted. Below it goes to Rejected, where you can still overrule it.</div>${ordered(d.thresholds, T_ORDER).map(([k, o]) => num("t", k, o)).join("")}</div>
-    <div class="card"><h3>Limits</h3><div class="small muted">Keep each run fast and inside your Gemini and Hunter quotas. Hunter's free plan allows 50 a month.</div>${ordered(d.limits, L_ORDER).map(([k, o]) => num("l", k, o)).join("")}</div>
+    <div class="card"><h3>The five scored questions and their weights. The weights must add up to 100.</h3>${d.weights.map(w => `<div class="rowform"><label for="w-${w.key}">${esc(w.label)}</label><input type="number" class="f" id="w-${w.key}" data-w="${w.key}" value="${w.weight}" min="0" max="100" ${needCode()}></div>`).join("")}<div class="rowform"><b>Total</b><b id="wtotal"></b></div></div>
+    <div class="card"><h3>Scores needed</h3><div class="small muted">Companies that reach the qualifying score move on to a contact and a draft. The others are listed under Rejected, where you can overrule the decision.</div>${ordered(d.thresholds, T_ORDER).map(([k, o]) => num("t", k, o)).join("")}</div>
+    <div class="card"><h3>Limits</h3><div class="small muted">Caps on how much one run may spend. Hunter's free plan allows 50 lookups a month.</div>${ordered(d.limits, L_ORDER).map(([k, o]) => num("l", k, o)).join("")}</div>
     <div class="card"><h3>Shortlist</h3><div class="small muted">Plain rules, no AI. A headline naming Series A–C scores points; a stage outside A–C is dropped; sector words add points. Remove a word with ×.</div>${ordered(d.shortlist.numbers, P_ORDER).map(([k, o]) => num("s", k, o)).join("")}
       <div style="margin-top:10px"><div class="small muted">Sector words</div><div id="kw"></div><div class="actions"><input type="text" class="f" id="kw-new" placeholder="Add a word" style="max-width:220px" ${needCode()}><button class="btn sm" id="kw-add" ${needCode()}>Add</button></div></div></div>
     <div class="card"><h3>Google News searches</h3><div class="small muted">One search per line. {year} becomes the current year. These are your "sources".</div><textarea class="f" id="queries" ${needCode()}>${esc(d.queries.join("\n"))}</textarea></div>
@@ -315,7 +315,7 @@ async function pageSettings() {
     const grp = g => Object.fromEntries([...document.querySelectorAll(`[data-g="${g}"]`)].map(i => [i.dataset.k, Number(i.value)]));
     const body = { weights: Object.fromEntries([...document.querySelectorAll("[data-w]")].map(i => [i.dataset.w, Number(i.value)])), thresholds: grp("t"), limits: grp("l"), shortlist_numbers: grp("s"), signal_keywords: kw,
                    queries: $("#queries").value.split("\n"), capabilities: $("#caps").value.split("\n") };
-    const r2 = await api("/api/settings", body); if (!r2.ok) return fail(r2); toast(`Saved as ${r2.data.saved_as}. It applies from the next run.`, 7000); route();
+    const r2 = await api("/api/settings", body); if (!r2.ok) return fail(r2); toast(`Saved as ${r2.data.saved_as}. It takes effect on the next run.`, 7000); route();
   };
 }
 
@@ -325,7 +325,7 @@ async function pageAccount() {
   $("#main").innerHTML = `<h1 class="page-title">Account</h1><p class="page-sub">Who is using the desk, and what they can do.</p>
     <div class="card"><div class="who"><div><span class="avatar" style="width:38px;height:38px;font-size:18px">${esc((S.me.name || "?")[0].toUpperCase())}</span><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small" style="margin-left:46px;margin-top:-6px">Reviews the drafts. Sends nothing: you send from Gmail yourself.</div></div>
       <span class="badge t-${S.me.can_edit ? "success" : "neutral"}">${S.me.can_edit ? (S.me.code_required ? "Can run and edit" : "Open access (no code set)") : "Viewing only"}</span></div></div>
-    <div class="card"><h3>Access</h3><p class="small muted" style="margin-top:0">Everyone with the link can look at the desk. Entering the access code lets you run, approve, edit, reject, overrule and save settings. Prospect email addresses are shown masked to viewers.</p>
+    <div class="card"><h3>Access</h3><p class="small muted" style="margin-top:0">Anyone with the link can view the desk. The access code unlocks running, reviewing and changing settings, and shows prospects' full email addresses (viewers see them masked).</p>
       ${S.me.code_required ? (S.me.can_edit ? `<button class="btn" id="logout">Lock the desk again</button>` : `<div class="actions" style="margin-top:0"><input type="password" class="f" id="code" placeholder="Access code" style="max-width:260px"><button class="btn primary" id="login">Unlock</button></div><div class="small" id="acc-msg" style="color:var(--danger-fg);margin-top:8px"></div>`) : `<div class="note">No access code is set, so everyone can edit. Set ACCESS_CODE to protect the desk.</div>`}</div>`;
   const lg = $("#login"); if (lg) { const go2 = async () => { const r = await api("/api/login", { code: $("#code").value }); if (!r.ok) { $("#acc-msg").textContent = r.data.error; return; } S.me = r.data; toast("Unlocked."); pageAccount(); }; lg.onclick = go2; $("#code").onkeydown = e => e.key === "Enter" && go2(); }
   const lo = $("#logout"); if (lo) lo.onclick = async () => { await api("/api/logout", {}); const m = await api("/api/me"); S.me = m.data; toast("Locked."); pageAccount(); };

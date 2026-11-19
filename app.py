@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Funding outreach desk. Run locally:  ./start.sh  then open http://127.0.0.1:8765   (also deployable on Vercel: this file exports `app`).
+"""Sprinto outreach desk. Run locally:  ./start.sh  then open http://127.0.0.1:8765   (also deployable on Vercel: this file exports `app`).
 Everything is read from Neon. Approve / Edit / Reject / Done only RECORD her decision: the software has no send function and no send button.
 Anyone can LOOK; running, editing and settings need the access code (ACCESS_CODE). Prospect email addresses are masked for viewers without it."""
 import os, time, hmac, hashlib, threading, datetime as dt
@@ -358,5 +358,5 @@ def overrule(cid):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8765))             # not 5000: macOS AirPlay Receiver uses it
-    print(f"Funding outreach desk: http://127.0.0.1:{port}   (Ctrl+C to stop)")
+    print(f"Sprinto outreach desk: http://127.0.0.1:{port}   (Ctrl+C to stop)")
     app.run(host="127.0.0.1", port=port, debug=False, threaded=True)

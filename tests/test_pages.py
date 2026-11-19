@@ -82,9 +82,9 @@ class TestDrafts(Base):
         cid = self.company("Acme", "acme.test"); self.draft(cid, "approved")
         self.assertEqual(self.post(f"/api/company/{cid}/done").status_code, 200)
         self.assertEqual(self.db.one("SELECT review_decision FROM emails WHERE company_id=%s", (cid,))["review_decision"], "done")
-        out = self.post(f"/api/company/{cid}/restore").get_json(); self.assertIn("already in Gmail", out["message"]); self.gmock.assert_called_once()
+        out = self.post(f"/api/company/{cid}/restore").get_json(); self.assertIn("still in Gmail", out["message"]); self.gmock.assert_called_once()
         self.gmock.return_value = ("d2", "created", "m2")
-        self.assertIn("Created again", self.post(f"/api/company/{cid}/restore").get_json()["message"])       # she had deleted it in Gmail
+        self.assertIn("Recreated", self.post(f"/api/company/{cid}/restore").get_json()["message"])       # she had deleted it in Gmail
         ov = self.c.get("/api/overview").get_json(); self.assertEqual((ov["name"], ov["to_review"], ov["run"]["drafted"]), ("Tester", 0, 1))
 
 class TestRejectedAndOverrule(Base):

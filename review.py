@@ -99,7 +99,7 @@ def restore_in_gmail(cid):
     draft_id, verb, msg_id = gmail_drafts.create_or_replace(e["subject"], e["body"], e["gmail_draft_id"])
     db.x("UPDATE emails SET gmail_draft_id=%s, gmail_message_id=%s, gmail_draft_error=NULL, draft_updated_at=now(), draft_created_at=COALESCE(draft_created_at, now()) WHERE id=%s",
          (draft_id, msg_id, e["id"]))
-    return "Created again in Gmail Drafts." if verb == "created" else "It is already in Gmail (refreshed to match this page)."
+    return "Recreated in Gmail Drafts." if verb == "created" else "The draft is still in Gmail; it was refreshed to match this page."
 
 def overrule(cid, note=""):
     """The Growth Lead disagrees with a no-go. Moves the company on to the contact step. Recorded as her decision, with her note."""
