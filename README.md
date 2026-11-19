@@ -33,7 +33,7 @@ Gmail sign-in (the token lasts 7 days while the Google app is in Testing mode): 
 
 ## Deploy on Vercel
 `app.py` exports `app` (Flask). Add the variables listed in `.env.example` (all except `NEON_API_KEY`) in Vercel, then redeploy.
-Each request must finish within the function limit (300 s on Hobby); the Run button finishes in about a minute.
+Prospect email addresses are masked on the public site. Each request must finish within the function limit (300 s on Hobby); the Run button finishes in about a minute.
 
 ## Known limits
 - Google News is read through its public RSS feed, which Google's terms and robots.txt do not allow. The Growth Lead decided to use it anyway

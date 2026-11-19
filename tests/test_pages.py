@@ -39,28 +39,20 @@ class Base(unittest.TestCase):
                   "VALUES (%s,0,'Subj','Hi Pat,\n\nFirst real paragraph here.\n\nBye',8,%s,10,true,true,'Subj','Hi Pat,\n\nFirst real paragraph here.\n\nBye','d1','m1',%s, now() - make_interval(hours => %s))", (cid, j({}), decision, age_h))
     def post(self, path, body=None, **kw): return self.c.post(path, json=body or {}, **kw)
 
-class TestAccessCode(Base):
-    def test_viewers_can_look_but_not_act_and_never_see_full_addresses(self):
+class TestOpenAccessAndPrivacy(Base):
+    def test_every_action_works_without_any_code(self):
         cid = self.company("Acme", "acme.test"); self.draft(cid)
-        with mock.patch.dict(os.environ, {"ACCESS_CODE": "letmein"}):
-            self.assertFalse(self.c.get("/api/me").get_json()["can_edit"])
-            self.assertEqual(self.post(f"/api/company/{cid}/approve").status_code, 401)
-            self.assertEqual(self.post("/api/run").status_code, 401)
-            self.assertEqual(self.post("/api/settings", {"weights": {}}).status_code, 401)
-            self.assertEqual(self.post("/api/advance", {"company_id": cid}).status_code, 401)
-            self.assertEqual(self.post("/api/login", {"code": "wrong"}).status_code, 401)
-            self.assertEqual(self.c.get(f"/api/company/{cid}").get_json()["contacts"][0]["email"], "p***@x.test")       # masked for viewers
-            self.assertEqual(self.post("/api/login", {"code": "letmein"}).status_code, 200)                              # cookie now set in the client
-            self.assertTrue(self.c.get("/api/me").get_json()["can_edit"])
-            self.assertEqual(self.c.get(f"/api/company/{cid}").get_json()["contacts"][0]["email"], "p@x.test")
-            self.assertEqual(self.post(f"/api/company/{cid}/approve").status_code, 200)
-            self.post("/api/logout"); self.assertEqual(self.post(f"/api/company/{cid}/done").status_code, 401)
-    def test_a_viewer_opening_a_draft_does_not_start_the_review_clock(self):
+        self.assertTrue(self.c.get("/api/me").get_json()["can_edit"])
+        for path in ("approve", "done", "contact-feedback"):
+            self.assertEqual(self.post(f"/api/company/{cid}/{path}", {"correct": True}).status_code, 200, path)
+        self.assertEqual(self.post(f"/api/company/{cid}/edit", {"subject": "S", "body": "New body text here."}).status_code, 200)
+        self.assertEqual(self.post(f"/api/company/{cid}/reject").status_code, 200)
+        self.assertEqual(self.post("/api/login", {"code": "x"}).status_code, 404)                               # the access-code feature is gone
+    def test_prospect_addresses_are_masked_on_the_public_site_only(self):
         cid = self.company("Acme", "acme.test"); self.draft(cid)
-        with mock.patch.dict(os.environ, {"ACCESS_CODE": "x"}): self.c.get(f"/api/company/{cid}")
-        self.assertIsNone(self.db.one("SELECT opened_at FROM emails WHERE company_id=%s", (cid,))["opened_at"])
-    def test_no_code_set_means_open_access_for_local_use(self):
-        self.assertTrue(self.c.get("/api/me").get_json()["can_edit"] and not self.c.get("/api/me").get_json()["code_required"])
+        self.assertEqual(self.c.get(f"/api/company/{cid}").get_json()["contacts"][0]["email"], "p@x.test")      # local desk: full address
+        with mock.patch.dict(os.environ, {"VERCEL": "1"}):
+            self.assertEqual(self.c.get(f"/api/company/{cid}").get_json()["contacts"][0]["email"], "p***@x.test")
 
 class TestDrafts(Base):
     def test_tabs_filters_and_counts(self):

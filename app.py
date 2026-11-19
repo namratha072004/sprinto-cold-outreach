@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Sprinto outreach desk. Run locally:  ./start.sh  then open http://127.0.0.1:8765   (also deployable on Vercel: this file exports `app`).
 Everything is read from Neon. Approve / Edit / Reject / Done only RECORD her decision: the software has no send function and no send button.
-Anyone can LOOK; running, editing and settings need the access code (ACCESS_CODE). Prospect email addresses are masked for viewers without it."""
-import os, time, hmac, hashlib, threading, datetime as dt
-from flask import Flask, jsonify, request, send_from_directory, abort, make_response
+Prospect email addresses are masked on the public site."""
+import os, time, threading, datetime as dt
+from flask import Flask, jsonify, request, send_from_directory, abort
 import db, review, metrics, research, jobs, gmail_drafts, rubric_admin
 import settings as S
 
@@ -25,23 +25,10 @@ ARTICLE_LABEL = {"drafted": "Drafted", "researching": "Researching now", "no_web
                  "not_funding_news": "Not funding news", "merged": "Merged with another article", "too_old": "Too old", "outside_stage": "Outside Series A-C",
                  "not_shortlisted": "Not shortlisted", "shortlisted": "Shortlisted", "not_read": "Not read yet"}
 
-# ---------------------------------------------------------------- access code
-def _code(): return S.env("ACCESS_CODE")
-def _token(): return hmac.new((_code() or "").encode(), b"sprinto-desk-v1", hashlib.sha256).hexdigest()
-def can_edit():
-    return (not _code()) or hmac.compare_digest(request.cookies.get("desk_auth", ""), _token())
-
-def edit_required(fn):
-    import functools
-    @functools.wraps(fn)
-    def wrap(*a, **k):
-        if not can_edit():
-            return jsonify({"error": "This needs the access code. Enter it on the Account page.", "needs_code": True}), 401
-        return fn(*a, **k)
-    return wrap
-
+# ---------------------------------------------------------------- privacy: prospects' addresses are masked on the public site
 def mask(addr):
     return (addr[0] + "***@" + addr.split("@", 1)[1]) if addr and "@" in addr else addr
+def hosted(): return bool(os.environ.get("VERCEL"))
 
 @app.before_request
 def guard():
@@ -61,21 +48,7 @@ def index(): return send_from_directory("static", "index.html")
 
 @app.get("/api/me")
 def me():
-    return jsonify({"name": S.env("SENDER_NAME") or "there", "can_edit": can_edit(), "code_required": bool(_code())})
-
-@app.post("/api/login")
-def login():
-    given = str((request.get_json(silent=True) or {}).get("code", ""))
-    if not _code() or hmac.compare_digest(given, _code()):
-        r = make_response(jsonify({"name": S.env("SENDER_NAME") or "there", "can_edit": True, "code_required": bool(_code())}))
-        r.set_cookie("desk_auth", _token() if _code() else "", httponly=True, samesite="Lax", secure=bool(os.environ.get("VERCEL")), max_age=60 * 60 * 24 * 30)
-        return r
-    time.sleep(0.8)
-    return jsonify({"error": "That access code is not right."}), 401
-
-@app.post("/api/logout")
-def logout():
-    r = make_response(jsonify({"ok": True})); r.delete_cookie("desk_auth"); return r
+    return jsonify({"name": S.env("SENDER_NAME") or "there", "can_edit": True})
 
 # ---------------------------------------------------------------- shared helpers
 def _drafts_rows():
@@ -133,7 +106,6 @@ def overview():
     return jsonify(out)
 
 @app.post("/api/run")
-@edit_required
 def run():
     """Press Run: creates a run in Neon, searches Google News, builds the shortlist. Returns the companies the browser then advances one short step at a time."""
     if not S.env("GEMINI_API_KEY"):
@@ -163,7 +135,6 @@ def run_progress():
     return jsonify(db.q("SELECT id, name, domain, status, stage, total_score FROM companies WHERE run_id=%s ORDER BY shortlist_rank NULLS LAST, id", (run["id"],)))
 
 @app.post("/api/advance")
-@edit_required
 def advance():
     cid = (request.get_json(silent=True) or {}).get("company_id")
     if not isinstance(cid, int):
@@ -194,20 +165,19 @@ def company(cid):
     c = db.one("SELECT * FROM companies WHERE id=%s", (cid,))
     if not c:
         abort(404)
-    if can_edit():
-        review.mark_opened(cid)
+    review.mark_opened(cid)
     email = db.one("SELECT * FROM emails WHERE company_id=%s AND is_current", (cid,))
     attempts = db.q("SELECT revision, words, qa_total, passed, qa FROM emails WHERE company_id=%s ORDER BY revision", (cid,))
     run = db.one("SELECT r.id, r.started_at, v.version FROM runs r JOIN rubric_versions v ON v.id=r.rubric_version_id WHERE r.id=%s", (c["run_id"],))
     v = review.view(c, email["review_decision"] if email and email["review_decision"] != "pending" else None)
     contacts = db.q("SELECT id, name, position, role_category, total, passed, chosen, scores, reasoning, hunter_sources, contact_correct, email, email_verification FROM contacts WHERE company_id=%s ORDER BY chosen DESC, total DESC", (cid,))
-    if not can_edit():
+    if hosted():
         for x in contacts:
             x["email"] = mask(x["email"])
     if email:
         email["gmail_open_url"] = (f"https://mail.google.com/mail/u/0/#drafts?compose={email['gmail_message_id']}" if email.get("gmail_message_id") else "https://mail.google.com/mail/u/0/#drafts")
     return jsonify({
-        "can_edit": can_edit(),
+        "can_edit": True,
         "company": {k: c[k] for k in ("id", "domain", "name", "status", "stage", "funding_stage", "funding_date", "total_score", "gates", "flags", "reason", "escalation_reason",
                                       "research_limit_hit", "seconds", "retry_counts", "usage", "overruled", "overrule_note")},
         "view": v, "run": run, "overrule_allowed": bool(c["assessment"] is not None and c["status"] in NOT_FIT and not c["overruled"]),
@@ -292,7 +262,7 @@ def runs():
     active = db.one("SELECT version FROM rubric_versions WHERE is_active")
     return jsonify({"runs": rows, "problems": problems, "metrics": metrics.compute(),
                     "health": {"database_ms": latency, "gmail": _gmail_health(), "hunter_left": _hunter_left(), "gemini_key": bool(S.env("GEMINI_API_KEY")),
-                               "rubric": active["version"] if active else None, "context": ctx, "access_code_set": bool(_code()), "model": S.env("GEMINI_MODEL")}})
+                               "rubric": active["version"] if active else None, "context": ctx, "model": S.env("GEMINI_MODEL")}})
 
 @app.get("/api/metrics")
 def get_metrics(): return jsonify(metrics.compute())
@@ -302,7 +272,6 @@ def get_metrics(): return jsonify(metrics.compute())
 def settings_get(): return jsonify(rubric_admin.current())
 
 @app.post("/api/settings")
-@edit_required
 def settings_save():
     name = rubric_admin.save(request.get_json(silent=True) or {})
     return jsonify({"saved_as": name, "settings": rubric_admin.current()})
@@ -321,23 +290,18 @@ def _act(cid, fn, *a):
     return jsonify(r)
 
 @app.post("/api/company/<int:cid>/approve")
-@edit_required
 def approve(cid): return _act(cid, review.approve)
 
 @app.post("/api/company/<int:cid>/done")
-@edit_required
 def done(cid): return _act(cid, review.mark_done)
 
 @app.post("/api/company/<int:cid>/reject")
-@edit_required
 def reject(cid): return _act(cid, review.reject, (request.get_json(silent=True) or {}).get("reason", ""))
 
 @app.post("/api/company/<int:cid>/restore")
-@edit_required
 def restore(cid): return _act(cid, review.restore_in_gmail)
 
 @app.post("/api/company/<int:cid>/edit")
-@edit_required
 def edit(cid):
     d = request.get_json(silent=True) or {}
     gmail_error = review.edit(cid, d.get("subject") or "", d.get("body") or "")
@@ -345,13 +309,11 @@ def edit(cid):
     return jsonify(out)
 
 @app.post("/api/company/<int:cid>/contact-feedback")
-@edit_required
 def contact_feedback(cid):
     review.contact_feedback(cid, bool((request.get_json(silent=True) or {}).get("correct")))
     return company(cid)
 
 @app.post("/api/company/<int:cid>/overrule")
-@edit_required
 def overrule(cid):
     review.overrule(cid, (request.get_json(silent=True) or {}).get("note", ""))
     return company(cid)

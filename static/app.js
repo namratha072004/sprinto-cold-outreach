@@ -16,7 +16,7 @@ const T_ORDER = ['total_min','contact_pass_total','pain_pass_total','email_pass_
 const ordered = (obj, order) => order.filter(k => k in obj).map(k => [k, obj[k]]);
 const STEPS = [["finding_website", "Website"], ["reading_website", "Research"], ["finding_contact", "Contact"], ["writing_email", "Email"]];
 
-const S = { me: { name: "", can_edit: false, code_required: false }, cfg: { threshold: 65, contact_pass: 8, labels: {}, words: [80, 120] }, driving: false, sel: null, detail: null, editing: false, progress: [], open: [] };
+const S = { me: { name: "", can_edit: true }, cfg: { threshold: 65, contact_pass: 8, labels: {}, words: [80, 120] }, driving: false, sel: null, detail: null, editing: false, progress: [], open: [] };
 
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -24,7 +24,7 @@ async function api(path, body) {
   return { ok: r.ok, status: r.status, data };
 }
 function toast(msg, ms = 4200) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms); }
-const needCode = () => S.me.can_edit ? "" : `disabled title="Needs the access code (Account page)"`;
+const needCode = () => "";
 const fail = r => toast((r.data && r.data.error) || "Something went wrong.");
 
 // ------------------------------------------------------------------ router
@@ -75,7 +75,6 @@ async function drive(ids, workers = 3) {
 }
 async function startRun() {
   if (S.driving) return;
-  if (!S.me.can_edit) { toast("Running needs the access code. Enter it on the Account page."); return go("account"); }
   const b = $("#run-btn"); if (b) { b.disabled = true; b.textContent = "Searching Google News…"; }
   $("#run-msg") && ($("#run-msg").textContent = "Searching Google News and building the shortlist. This takes about a minute.");
   const r = await api("/api/run", {});
@@ -113,7 +112,7 @@ async function pageToday() {
     <div>${o && o.to_review ? `<a class="btn primary cta" href="#/drafts">Review ${o.to_review} draft${o.to_review > 1 ? "s" : ""} →</a> ` : ""}
       <button class="btn ${o && o.to_review ? "" : "primary"} cta" id="run-btn" ${S.driving ? "disabled" : ""}>${S.driving ? "Run in progress…" : run ? "Run again" : "Run now"}</button>
       ${S.open.length && !S.driving && S.me.can_edit ? `<button class="btn cta" id="resume-btn">Continue unfinished run (${S.open.length})</button>` : ""}</div>
-    <p class="muted small" id="run-msg" style="margin-top:18px">Nothing is ever sent by this software. You send from Gmail. <a href="#/sources">See where the articles came from</a>${S.me.can_edit ? "" : " · <a href='#/account'>Enter the access code to run</a>"}</p>
+    <p class="muted small" id="run-msg" style="margin-top:18px">Nothing is ever sent by this software. You send from Gmail. <a href="#/sources">See where the articles came from</a></p>
     <div id="progress"></div></section>
     ${o && o.waiting.length ? `<div class="card"><h3>Waiting for you</h3>${o.waiting.map(w => `<a class="runrow" style="text-decoration:none;color:inherit" href="#/drafts?id=${w.id}"><b>${esc(w.name)}</b><span class="muted">${esc(w.contact || "")}</span><span><span class="badge t-warning">score ${w.score}</span></span></a>`).join("")}</div>` : ""}
     ${o && o.gmail !== "ok" ? `<div class="note bad"><b>Gmail Drafts is not connected.</b> ${esc(o.gmail || "")} Drafts cannot be created until this is fixed (Runs &amp; health).</div>` : ""}`;
@@ -195,7 +194,7 @@ function draftPanel(d) {
     <label for="body">Email</label><textarea id="body" readonly>${esc(e.body)}</textarea><div class="tiny muted wc" id="wc"></div>${note}
     <div class="actions" id="act-view"><button class="btn primary" id="b-approve" ${off}>Approve</button><button class="btn" id="b-edit" ${off}>Edit</button><button class="btn danger" id="b-reject" ${off}>Reject</button>${dec === "approved" ? `<button class="btn" id="b-done" ${off}>Mark as done (I sent it)</button>` : ""}</div>
     <div class="actions" id="act-edit" hidden><button class="btn primary" id="b-save">Save edit</button><button class="btn" id="b-cancel">Cancel</button></div>
-    <div class="muted tiny" style="margin-top:10px">These buttons only record your decision. They send nothing. Saving an edit also updates the Gmail draft.${S.me.can_edit ? "" : " Viewing only: enter the access code on the Account page to act."}</div></div>`;
+    <div class="muted tiny" style="margin-top:10px">These buttons only record your decision. They send nothing. Saving an edit also updates the Gmail draft.</div></div>`;
 }
 const wcount = t => (t.trim().match(/\S+/g) || []).length;
 function wireDetail(d, root) {
@@ -273,7 +272,7 @@ async function pageRuns() {
     <div class="grid2">${hc("Gmail Drafts", h.gmail === "ok", h.gmail === "ok" ? "The sign-in works. While the Google app is in Testing mode it expires after 7 days: run scripts/gmail_authorize.py again." : h.gmail)}
       ${hc("Hunter", h.hunter_left == null ? null : h.hunter_left > 4, h.hunter_left == null ? "Could not check." : `${h.hunter_left} lookups left this month.`)}
       ${hc("Gemini", h.gemini_key, h.gemini_key ? `Model ${h.model}.` : "No Gemini key set.")}${hc("Database (Neon)", h.database_ms < 3000, `${h.database_ms} ms to answer.`)}
-      ${hc("Rules", true, `Rubric ${h.rubric}. Context file ${h.context || "missing"}.`)}${hc("Access code", h.access_code_set, h.access_code_set ? "Set. Only people with the code can run or change things." : "Not set: anyone with the link can run and edit.")}</div>
+      ${hc("Rules", true, `Rubric ${h.rubric}. Context file ${h.context || "missing"}.`)}</div>
     <div class="card" style="margin-top:18px"><h3>Run history</h3>${d.runs.length ? `<table><tr><th>Started</th><th>Articles</th><th>Companies</th><th>Drafts</th><th>Errors</th><th>Hunter</th><th>Rules</th><th>Status</th></tr>${d.runs.map(x => `<tr><td>${esc(ago(x.started_at))}<div class="tiny muted">${esc(String(x.started_at).slice(0, 16).replace("T", " "))} · ${esc((x.params || {}).trigger || "")}</div></td><td>${x.articles}</td><td>${x.companies}${x.unfinished ? ` <span class="badge t-warning">${x.unfinished} unfinished</span>` : ""}</td><td>${x.drafts}</td><td>${x.errors || "–"}</td><td>${x.hunter_calls} calls${x.hunter_paused ? `<div class="tiny" style="color:var(--warning-fg)">${esc(x.hunter_paused)}</div>` : ""}</td><td class="tiny">${esc(x.version)}</td><td><span class="badge t-${x.unfinished ? "warning" : "neutral"}">${esc(x.status.toLowerCase())}</span></td></tr>`).join("")}</table>` : `<div class="muted">No runs yet.</div>`}</div>
     <div class="card"><h3>Scorecard</h3><div class="kv">
       <span class="k">Your review time per company (target under ${t.minutes_per_company} min)</span><b>${m.review_seconds_avg == null ? "none yet" : (m.review_seconds_avg / 60).toFixed(1) + " min"}</b>
@@ -291,8 +290,7 @@ async function pageSettings() {
   const r = await api("/api/settings"); if (!r.ok) throw new Error("settings"); const d = r.data; let kw = [...d.shortlist.signal_keywords];
   const num = (grp, key, o) => `<div class="rowform"><label for="${grp}-${key}">${esc(o.label)}</label><input type="number" class="f" id="${grp}-${key}" data-g="${grp}" data-k="${key}" value="${o.value}" min="${o.min}" max="${o.max}" step="any" ${needCode()}></div>`;
   $("#main").innerHTML = `<h1 class="page-title">Settings</h1><p class="page-sub">The scoring rubric and shortlist rules, which you own. Each save is stored as a new version and takes effect on the next run. Current: <b>${esc(d.version)}</b></p>
-    ${S.me.can_edit ? "" : `<div class="note warn">Viewing only. Changing settings needs the access code (Account page).</div>`}
-    <div class="card"><h3>The five scored questions and their weights. The weights must add up to 100.</h3>${d.weights.map(w => `<div class="rowform"><label for="w-${w.key}">${esc(w.label)}</label><input type="number" class="f" id="w-${w.key}" data-w="${w.key}" value="${w.weight}" min="0" max="100" ${needCode()}></div>`).join("")}<div class="rowform"><b>Total</b><b id="wtotal"></b></div></div>
+        <div class="card"><h3>The five scored questions and their weights. The weights must add up to 100.</h3>${d.weights.map(w => `<div class="rowform"><label for="w-${w.key}">${esc(w.label)}</label><input type="number" class="f" id="w-${w.key}" data-w="${w.key}" value="${w.weight}" min="0" max="100" ${needCode()}></div>`).join("")}<div class="rowform"><b>Total</b><b id="wtotal"></b></div></div>
     <div class="card"><h3>Scores needed</h3><div class="small muted">Companies that reach the qualifying score move on to a contact and a draft. The others are listed under Rejected, where you can overrule the decision.</div>${ordered(d.thresholds, T_ORDER).map(([k, o]) => num("t", k, o)).join("")}</div>
     <div class="card"><h3>Limits</h3><div class="small muted">Caps on how much one run may spend. Hunter's free plan allows 50 lookups a month.</div>${ordered(d.limits, L_ORDER).map(([k, o]) => num("l", k, o)).join("")}</div>
     <div class="card"><h3>Shortlist</h3><div class="small muted">Plain rules, no AI. A headline naming Series A–C scores points; a stage outside A–C is dropped; sector words add points. Remove a word with ×.</div>${ordered(d.shortlist.numbers, P_ORDER).map(([k, o]) => num("s", k, o)).join("")}
@@ -322,13 +320,11 @@ async function pageSettings() {
 // ------------------------------------------------------------------ Account
 async function pageAccount() {
   const me = await api("/api/me"); S.me = me.data;
-  $("#main").innerHTML = `<h1 class="page-title">Account</h1><p class="page-sub">Who is using the desk, and what they can do.</p>
-    <div class="card"><div class="who"><div><span class="avatar" style="width:38px;height:38px;font-size:18px">${esc((S.me.name || "?")[0].toUpperCase())}</span><b style="font-size:18px">${esc(S.me.name)}</b><div class="muted small" style="margin-left:46px;margin-top:-6px">Reviews the drafts. Sends nothing: you send from Gmail yourself.</div></div>
-      <span class="badge t-${S.me.can_edit ? "success" : "neutral"}">${S.me.can_edit ? (S.me.code_required ? "Can run and edit" : "Open access (no code set)") : "Viewing only"}</span></div></div>
-    <div class="card"><h3>Access</h3><p class="small muted" style="margin-top:0">Anyone with the link can view the desk. The access code unlocks running, reviewing and changing settings, and shows prospects' full email addresses (viewers see them masked).</p>
-      ${S.me.code_required ? (S.me.can_edit ? `<button class="btn" id="logout">Lock the desk again</button>` : `<div class="actions" style="margin-top:0"><input type="password" class="f" id="code" placeholder="Access code" style="max-width:260px"><button class="btn primary" id="login">Unlock</button></div><div class="small" id="acc-msg" style="color:var(--danger-fg);margin-top:8px"></div>`) : `<div class="note">No access code is set, so everyone can edit. Set ACCESS_CODE to protect the desk.</div>`}</div>`;
-  const lg = $("#login"); if (lg) { const go2 = async () => { const r = await api("/api/login", { code: $("#code").value }); if (!r.ok) { $("#acc-msg").textContent = r.data.error; return; } S.me = r.data; toast("Unlocked."); pageAccount(); }; lg.onclick = go2; $("#code").onkeydown = e => e.key === "Enter" && go2(); }
-  const lo = $("#logout"); if (lo) lo.onclick = async () => { await api("/api/logout", {}); const m = await api("/api/me"); S.me = m.data; toast("Locked."); pageAccount(); };
+  $("#main").innerHTML = `<h1 class="page-title">Account</h1><p class="page-sub">Who is using the desk.</p>
+    <div class="card"><div class="who"><div><span class="avatar" style="width:38px;height:38px;font-size:18px">${esc((S.me.name || "?")[0].toUpperCase())}</span><b style="font-size:18px">${esc(S.me.name)}</b>
+      <div class="muted small" style="margin-left:46px;margin-top:-6px">Reviews the drafts and decides. This software sends nothing: you send from Gmail yourself.</div></div>
+      <span class="badge t-success">Can run and review</span></div></div>
+    <div class="card"><h3>Privacy</h3><p class="small muted" style="margin:0">Prospects' email addresses are research data only. On this public site they are shown partly hidden (for example i***@company.com) and are never used to send anything.</p></div>`;
 }
 
 // ------------------------------------------------------------------ start
