@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import db, settings as S, pipeline as P, research
 
 apply = "--apply" in sys.argv
-rows = db.q("""SELECT DISTINCT ON (c.domain) c.id cid, c.run_id, c.name, c.domain, ct.id ctid, ct.name person, ct.position, e.id eid, e.gmail_draft_id
+rows = db.q("""SELECT c.id cid, c.run_id, c.name, c.domain, ct.id ctid, ct.name person, ct.position, e.id eid, e.gmail_draft_id
                FROM companies c JOIN contacts ct ON ct.company_id=c.id AND ct.chosen JOIN emails e ON e.company_id=c.id AND e.is_current
-               WHERE c.domain IS NOT NULL ORDER BY c.domain, c.id DESC""")
+               WHERE c.domain IS NOT NULL ORDER BY c.id""")
 bad = [r for r in rows if P.classify_role(r["position"]) == "other"]
 print(f"{len(rows)} drafted companies checked, {len(bad)} have a contact who is not one of the four rubric roles:")
 for r in bad:
